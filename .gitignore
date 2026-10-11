@@ -10,3 +10,5 @@ prisma/*.db
 prisma/*.db-journal
 **/*.db
 **/*.db-journal
+~$*.docx
+docs/Untitled

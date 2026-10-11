@@ -80,9 +80,9 @@ app.use("/api/workspace", workspaceRoutes);
 app.use("/api/chat", chatRoutes);
 
 async function start() {
-  const { loadSnapshot, seedFromCsvIfEmpty } = await import("./services/persist.js");
+  const { loadSnapshot, stripLegacyAutoSeed } = await import("./services/persist.js");
   await loadSnapshot();
-  await seedFromCsvIfEmpty();
+  await stripLegacyAutoSeed();
   app.listen(port, () => {
     console.log(`Aether API listening on http://localhost:${port}`);
   });

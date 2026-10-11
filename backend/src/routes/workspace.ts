@@ -5,7 +5,7 @@ import { addLog, getProfile, getStore, setProfile } from "../services/store.js";
 import { saveSnapshot } from "../services/persist.js";
 import { deleteImportedDataset, deskCounts, ingestCsv } from "../services/ingest.js";
 import { runAgentsForKind } from "../../../agents/runners/run.js";
-import { complianceItems, grantMatches } from "../services/profile.js";
+import { complianceItems, grantMatches, profileReady as isProfileReady } from "../services/profile.js";
 import type { Appointment, FollowUpCustomer } from "../types.js";
 
 const router = Router();
@@ -90,7 +90,7 @@ router.post("/profile", async (req, res) => {
 router.get("/grants", (req, res) => {
   const { businessId } = req as TenantRequest;
   const grants = grantMatches(businessId);
-  res.json({ grants, profileReady: grants.some((grant) => grant.match.ok) });
+  res.json({ grants, profileReady: isProfileReady(getProfile(businessId)) });
 });
 
 router.get("/customers", (req, res) => {

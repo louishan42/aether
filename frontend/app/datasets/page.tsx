@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
+import { DEMO_SME_PROFILE } from "../../lib/demoProfile";
 
 type FileRow = {
   id: string;
@@ -125,6 +126,7 @@ export default function DatasetsPage() {
                 if (!res.ok) throw new Error("Could not load demo_data.csv");
                 const csv = await res.text();
                 const result = await importOne(csv, "demo_data.csv", "invoices");
+                await api.saveProfile(DEMO_SME_PROFILE);
                 await load();
                 setMessage(
                   `demo_data.csv: treated as ${result.kind} (${result.stored} rows, ${result.mapped} matched). Open Invoices.`,
@@ -155,6 +157,7 @@ export default function DatasetsPage() {
                   const result = await importOne(await res.text(), name, asKind);
                   notes.push(`${name}: ${result.mapped} ${result.kind}`);
                 }
+                await api.saveProfile(DEMO_SME_PROFILE);
                 await load();
                 setMessage(`${notes.join(" · ")}. Open Customers and Bookings.`);
               } catch (err) {

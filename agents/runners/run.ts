@@ -74,6 +74,10 @@ export async function runGrantAgent(businessId: string) {
   const store = getStore();
   const run = startRun(businessId, "grant");
   const profile = enrichProfile(businessId);
+  if (!profile.industry?.trim()) {
+    finishRun(run, "matches=0; no profile");
+    return { run, eligibleCount: 0, drafts: [], matches: [] };
+  }
   const tools = createTools(businessId);
   const matches = GRANT_CATALOG.map((grant) => ({ grant, verdict: grant.match(profile) })).filter((row) => row.verdict.ok);
   const created = [];
@@ -134,6 +138,10 @@ export async function runComplianceAgent(businessId: string) {
   const store = getStore();
   const run = startRun(businessId, "compliance");
   const profile = enrichProfile(businessId);
+  if (!profile.industry?.trim()) {
+    finishRun(run, "applicable=0; no profile");
+    return { run, eligibleCount: 0, drafts: [], applicable: [] };
+  }
   const tools = createTools(businessId);
   const applicable = COMPLIANCE_CATALOG.filter((req) => req.appliesWhen(profile));
   const created = [];

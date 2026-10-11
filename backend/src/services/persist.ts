@@ -1,9 +1,6 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { databaseReady, prisma } from "./db.js";
-import { addLog, getStore, setPolicy, setProfile } from "./store.js";
-import { ingestCsv, pruneOrphanDrafts, syncDeskFromDatasets } from "./ingest.js";
+import { getStore, setProfile } from "./store.js";
+import { deleteImportedDataset, pruneOrphanDrafts, syncDeskFromDatasets } from "./ingest.js";
 import type { AgentDraft, Appointment, Invoice } from "../types.js";
 
 const DEMO_BUSINESS_ID = process.env.DEMO_BUSINESS_ID ?? "demo-business";
@@ -185,46 +182,41 @@ export async function saveSnapshot() {
   await prisma.$transaction(ops);
 }
 
-export async function seedFromCsvIfEmpty() {
+export async function stripLegacyAutoSeed() {
   const store = getStore();
-  if (store.invoices.length || store.customers.length || store.appointments.length || store.imports.length || store.logs.length) {
-    return { seeded: false };
+  const businessId = DEMO_BUSINESS_ID;
+  const profile = store.profiles[businessId];
+  const harbour = profile?.name === "Harbour Digital Studio";
+  const seedNames = new Set(["invoices.csv", "customers.csv", "appointments.csv"]);
+  const tenantFiles = store.imports.filter((row) => row.businessId === businessId);
+  const seedFiles = tenantFiles.filter((row) => seedNames.has(row.filename));
+  const onlyLegacySeeds = seedFiles.length > 0 && tenantFiles.every((row) => seedNames.has(row.filename));
+  if (!harbour && !onlyLegacySeeds) return { cleared: false };
+
+  for (const file of seedFiles) {
+    try {
+      deleteImportedDataset(businessId, file.id);
+    } catch {
+      /* already gone */
+    }
   }
 
-  const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../../datasets");
-  const businessId = DEMO_BUSINESS_ID;
+  store.evidence = store.evidence.filter((row) => row.businessId !== businessId);
+  store.drafts = store.drafts.filter((draft) => draft.agent !== "grant" && draft.agent !== "compliance");
 
-  const invoiceCsv = await readFile(path.join(root, "invoices.csv"), "utf8");
-  const customerCsv = await readFile(path.join(root, "customers.csv"), "utf8");
-  const bookingCsv = await readFile(path.join(root, "appointments.csv"), "utf8");
-  ingestCsv(businessId, invoiceCsv, "invoices.csv", "invoices");
-  ingestCsv(businessId, customerCsv, "customers.csv", "customers");
-  ingestCsv(businessId, bookingCsv, "appointments.csv", "appointments");
-  setProfile({
-    businessId,
-    name: "Harbour Digital Studio",
-    industry: "software",
-    employeeCount: 8,
-    annualRevenueSgd: 1_200_000,
-    isExporting: true,
-    usesDigitalTools: true,
-    hasGstRegistration: true,
-  });
-  setPolicy({
-    businessId,
-    minimumOverdueDays: 1,
-    maxReminders: 3,
-    cooldownDays: 7,
-    customerFollowUpDays: 14,
-    appointmentReminderHours: 24,
-  });
-  addLog({
-    agent: "system",
-    agentRunId: null,
-    invoiceId: null,
-    action: "seed_datasets",
-    result: `invoices=${store.invoices.length}; customers=${store.customers.length}; bookings=${store.appointments.length}`,
-  });
+  if (harbour || !profile?.industry) {
+    setProfile({
+      businessId,
+      name: "Demo SME",
+      industry: "",
+      employeeCount: 0,
+      annualRevenueSgd: 0,
+      isExporting: false,
+      usesDigitalTools: false,
+      hasGstRegistration: false,
+    });
+  }
+
   await saveSnapshot();
-  return { seeded: true };
+  return { cleared: true };
 }
