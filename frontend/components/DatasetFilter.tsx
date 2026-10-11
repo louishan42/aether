@@ -33,6 +33,14 @@ export function DatasetFilter({
   }, [filesProp]);
 
   const files = filesProp ?? loaded;
+
+  useEffect(() => {
+    if (!files.length) return;
+    if (view === "all" || view === "manual") return;
+    const ids = Array.isArray(view) ? view : [view];
+    const known = new Set(files.map((file) => file.id));
+    if (ids.some((id) => !known.has(id))) setView("all");
+  }, [files, view, setView]);
   const selected = Array.isArray(view) ? view : view === "all" || view === "manual" ? [] : [view];
   const matched = useMemo(() => {
     const needle = query.trim().toLowerCase();

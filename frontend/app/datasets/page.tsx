@@ -113,7 +113,34 @@ export default function DatasetsPage() {
             <option value="custom">Custom (store only)</option>
           </select>
         </label>
-        <div className="mt-5">
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                const res = await fetch("/demo_data.csv");
+                if (!res.ok) throw new Error("Could not load demo_data.csv");
+                const csv = await res.text();
+                const result = await importOne(csv, "demo_data.csv", "invoices");
+                await load();
+                setMessage(
+                  `demo_data.csv: treated as ${result.kind} (${result.stored} rows, ${result.mapped} matched). Open Invoices.`,
+                );
+              } catch (err) {
+                setMessage(err instanceof Error ? err.message : "Demo load failed");
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {busy ? "Importing…" : "Load demo_data"}
+          </button>
+          <a className="btn-ghost" href="/demo_data.csv" download="demo_data.csv">
+            Download demo_data.csv
+          </a>
           <label className="btn-ink inline-block cursor-pointer">
             {busy ? "Importing…" : "Choose files"}
             <input
