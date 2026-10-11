@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { PageHeader } from "../../components/PageHeader";
+import shahPhoto from "./photos/shah.jpg";
+import louisPhoto from "./photos/louis.jpg";
+import lokiPhoto from "./photos/loki.jpg";
+
+const photos = {
+  shah: shahPhoto,
+  louis: louisPhoto,
+  loki: lokiPhoto,
+};
 
 const team = [
   {
-    slug: "shah",
+    slug: "shah" as const,
     photoPos: "center 30%",
     name: "Shah Htet Naing",
     short: "Shah",
@@ -19,7 +28,7 @@ const team = [
     ],
   },
   {
-    slug: "louis",
+    slug: "louis" as const,
     photoPos: "center 78%",
     name: "Thi Han Htun",
     short: "Louis",
@@ -32,7 +41,7 @@ const team = [
     ],
   },
   {
-    slug: "loki",
+    slug: "loki" as const,
     photoPos: "center 18%",
     name: "Nyan Lin Htet",
     short: "Loki",
@@ -44,7 +53,7 @@ const team = [
       "Owned business strategy for the desk.",
     ],
   },
-] as const;
+];
 
 const stack = [
   { name: "Next.js", mark: "N" },
@@ -55,32 +64,6 @@ const stack = [
   { name: "OpenAI", mark: "AI" },
   { name: "Resend", mark: "@" },
 ];
-
-function TeamPhoto({ slug, name, photoPos }: { slug: string; name: string; photoPos: string }) {
-  const [src, setSrc] = useState(`/team/${slug}.jpg`);
-  const [missing, setMissing] = useState(false);
-
-  return (
-    <div className="about-photo" aria-label={`${name} photo`}>
-      {missing ? (
-        <div className="about-photo-empty">
-          <span>Photo</span>
-          <span>Drop {slug}.jpg in frontend/public/team</span>
-        </div>
-      ) : (
-        <img
-          src={src}
-          alt={`${name}`}
-          style={{ objectPosition: photoPos }}
-          onError={() => {
-            if (src.endsWith(".jpg")) setSrc(`/team/${slug}.png`);
-            else setMissing(true);
-          }}
-        />
-      )}
-    </div>
-  );
-}
 
 export default function AboutPage() {
   return (
@@ -101,7 +84,15 @@ export default function AboutPage() {
       <section className="grid gap-4 lg:grid-cols-3">
         {team.map((member) => (
           <article key={member.slug} className="panel flex flex-col p-5">
-            <TeamPhoto slug={member.slug} name={member.name} photoPos={member.photoPos} />
+            <div className="about-photo">
+              <Image
+                src={photos[member.slug]}
+                alt={member.name}
+                fill
+                sizes="(min-width: 1024px) 30vw, 90vw"
+                style={{ objectFit: "cover", objectPosition: member.photoPos }}
+              />
+            </div>
             <h2 className="mt-4 text-xl font-semibold tracking-tight">
               {member.name} <span className="text-muted">({member.short})</span>
             </h2>
