@@ -14,29 +14,29 @@ const photos = {
 
 const team = [
   {
-    slug: "shah" as const,
-    photoPos: "center 30%",
-    name: "Shah Htet Naing",
-    short: "Shah",
-    role: "Full-stack",
-    linkedin: "https://www.linkedin.com/in/shah-htet-naing",
-    contributions: [
-      "UI and API.",
-      "PII checks.",
-      "Risk scoring.",
-    ],
-  },
-  {
     slug: "louis" as const,
     photoPos: "center 78%",
     name: "Thi Han Htun",
     short: "Louis",
-    role: "Backend",
+    role: "Full-stack",
     linkedin: "https://www.linkedin.com/in/thi-han-htun-65a22736a/",
     contributions: [
-      "Database.",
-      "Records.",
-      "Approvals and email.",
+      "Next.js UI, Express API, and Prisma/Supabase.",
+      "CSV ingest, datasets, and combined desk pages.",
+      "Five agents, Approvals, and Analysis export.",
+      "Vercel, Render, and live deploy.",
+    ],
+  },
+  {
+    slug: "shah" as const,
+    photoPos: "center 30%",
+    name: "Shah Htet Naing",
+    short: "Shah",
+    role: "Frontend",
+    linkedin: "https://www.linkedin.com/in/shah-htet-naing",
+    contributions: [
+      "Layout, theme, and About cards.",
+      "Sidebar and page shell.",
     ],
   },
   {
