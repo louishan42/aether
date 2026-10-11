@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
@@ -33,7 +32,6 @@ export default function AppointmentsPage() {
       <PageHeader
         eyebrow="Records"
         title="Bookings"
-        description="All loaded booking files combined. Reminders are prepared only for booked slots inside the reminder window."
         action={
           <button
             className="btn-primary"
@@ -66,13 +64,6 @@ export default function AppointmentsPage() {
         </button>
       </section>
       {message && <p className="text-sm">{message}</p>}
-      <p className="text-sm text-muted">
-        Bulk import is on{" "}
-        <Link href="/datasets" className="accent-text font-semibold hover:underline">
-          Datasets
-        </Link>
-        .
-      </p>
       <DatasetFilter
         files={files}
         value={fileId}

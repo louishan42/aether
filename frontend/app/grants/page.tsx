@@ -37,7 +37,6 @@ export default function GrantsPage() {
       <PageHeader
         eyebrow="Records"
         title="Grants"
-        description="Matches your Settings profile and loaded files to a Singapore grant catalog. Shortlist only — not a funding decision."
         action={
           <button
             className="btn-primary w-full sm:w-auto"
@@ -47,7 +46,7 @@ export default function GrantsPage() {
               try {
                 const result = await api.analyze("grant");
                 const count = Array.isArray(result?.drafts) ? result.drafts.length : fits.length;
-                setMessage(`${count} checklist(s) are in Approvals. Review them before you treat them as ready.`);
+                setMessage(`${count} in Approvals.`);
                 await load();
               } catch (err) {
                 setMessage(err instanceof Error ? err.message : "Could not prepare grant checklists.");
@@ -62,11 +61,11 @@ export default function GrantsPage() {
       />
       {!profileReady && (
         <p className="panel p-4 text-sm">
-          No strong matches yet. Add industry and size in{" "}
+          Set industry in{" "}
           <Link href="/settings" className="accent-text font-semibold hover:underline">
             Settings
           </Link>
-          , or load files on Datasets.
+          .
         </p>
       )}
       {message && <p className="text-sm">{message}</p>}

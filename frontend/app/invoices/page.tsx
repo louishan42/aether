@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
@@ -44,7 +43,6 @@ export default function InvoicesPage() {
       <PageHeader
         eyebrow="Records"
         title="Invoices"
-        description="All loaded invoice files combined. Reminders skip paid and disputed rows. Bulk files go in Datasets."
         action={
           <button
             className="btn-primary"
@@ -86,13 +84,6 @@ export default function InvoicesPage() {
           Save invoice
         </button>
       </section>
-
-      <p className="text-sm text-muted">
-        {visibleOverdue.length} overdue and eligible. Need a file?{" "}
-        <Link href="/datasets" className="accent-text font-semibold hover:underline">
-          Open Datasets
-        </Link>
-      </p>
 
       <DatasetFilter
         files={files}

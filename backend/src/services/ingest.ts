@@ -247,10 +247,10 @@ export function ingestCsv(businessId: string, csv: string, filename = "upload.cs
     agent: kind === "invoices" ? "invoice" : kind === "customers" ? "customer" : kind === "appointments" ? "appointment" : null,
     reason:
       kind === "custom"
-        ? "Columns do not match invoices, customers, or bookings, so this file stays on Datasets only. Agents did not run."
+        ? "Unmatched columns. Stored on Datasets only."
         : existingSameKind
-          ? `Matched as ${kind} and combined with your other ${kind} file(s) (${existingSameKind + 1} files). Combined is the default; search, pick one, or pick several on that page.`
-          : `Matched as ${kind}. Only the ${kind === "invoices" ? "collections" : kind === "customers" ? "follow-up" : "booking"} agent ran.`,
+          ? `Added as ${kind}. Combined with ${existingSameKind + 1} files.`
+          : `Added as ${kind}.`,
   };
 }
 

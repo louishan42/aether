@@ -51,7 +51,6 @@ export function DatasetFilter({
         <div>
           <p className="text-[11px] uppercase tracking-[0.16em] text-muted">Dataset view</p>
           <p className="mt-1 font-medium tracking-tight">{label}</p>
-          <p className="text-sm text-muted">{rowTotal ?? 0} rows in this view</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button

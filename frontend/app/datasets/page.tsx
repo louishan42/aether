@@ -85,7 +85,6 @@ export default function DatasetsPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Datasets"
-        description="Drop as many CSVs as you need. Same-kind files are combined by default. On Invoices, Customers, and Bookings you can Combined, search, pick one file, or pick several. Re-uploading the same filename replaces that file only. Unmatched columns stay here and no agent runs."
       />
       {message && <p className="text-sm text-red-800">{message}</p>}
 
@@ -103,7 +102,7 @@ export default function DatasetsPage() {
         }}
       >
         <p className="text-lg font-semibold tracking-tight">Drop any dataset here</p>
-        <p className="mt-2 text-sm text-muted">CSV or TSV. Headers can be named however you like.</p>
+        <p className="mt-2 text-sm text-muted">CSV or TSV.</p>
         <label className="mt-4 inline-block text-left text-sm">
           Treat file as
           <select className="field mt-1" value={kind} onChange={(event) => setKind(event.target.value)}>
@@ -208,9 +207,7 @@ export default function DatasetsPage() {
                 <h2 className="font-medium tracking-tight">{file.filename}</h2>
                 <p className="mt-1 text-sm text-muted">
                   {file.kind} · {file.rowCount} rows · {new Date(file.importedAt).toLocaleString()}
-                  {file.kind === "custom"
-                    ? " · review file · no agent (columns did not match invoices, customers, or bookings)"
-                    : ` · ${file.kind} agent`}
+                  {file.kind === "custom" ? " · stored only" : ""}
                   {files.length > 4 ? (open ? " · hide preview" : " · show preview") : ""}
                 </p>
               </button>
@@ -218,7 +215,7 @@ export default function DatasetsPage() {
                 className="btn-ghost"
                 disabled={busy}
                 onClick={async () => {
-                  if (!window.confirm(`Delete ${file.filename}? This removes its rows, drafts, and database records.`)) return;
+                  if (!window.confirm(`Delete ${file.filename}?`)) return;
                   setBusy(true);
                   try {
                     const result = await api.deleteDataset(file.id);

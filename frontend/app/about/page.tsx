@@ -18,12 +18,12 @@ const team = [
     photoPos: "center 30%",
     name: "Shah Htet Naing",
     short: "Shah",
-    role: "Developer · Full-Stack & AI Systems Leader",
+    role: "Full-stack",
     linkedin: "https://www.linkedin.com/in/shah-htet-naing",
     contributions: [
-      "Architected the Next.js UI and Express API.",
-      "Built PII/DLP regex guardrails.",
-      "Designed the risk scoring engine.",
+      "UI and API.",
+      "PII checks.",
+      "Risk scoring.",
     ],
   },
   {
@@ -31,12 +31,12 @@ const team = [
     photoPos: "center 78%",
     name: "Thi Han Htun",
     short: "Louis",
-    role: "Developer · Backend & Infrastructure Specialist",
+    role: "Backend",
     linkedin: "https://www.linkedin.com/in/thi-han-htun-65a22736a/",
     contributions: [
-      "Built the database schema.",
-      "Wired ledger-style record integrations.",
-      "Shipped the human-in-the-loop approval and email dispatch pipeline.",
+      "Database.",
+      "Records.",
+      "Approvals and email.",
     ],
   },
   {
@@ -44,12 +44,12 @@ const team = [
     photoPos: "center 18%",
     name: "Nyan Lin Htet",
     short: "Loki",
-    role: "Business Development Manager · Product & SME Ecosystem Lead",
+    role: "Product",
     linkedin: "https://www.linkedin.com/in/nyan-lin-htet-1a6849240/",
     contributions: [
-      "Led product-market fit with Enterprise Singapore SME requirements.",
-      "Designed the operator workflow.",
-      "Owned business strategy for the desk.",
+      "SME fit.",
+      "Operator flow.",
+      "Go-to-market.",
     ],
   },
 ];
@@ -59,8 +59,7 @@ const stack = [
   { name: "Vercel", mark: "▲" },
   { name: "Render", mark: "R" },
   { name: "Node.js", mark: "JS" },
-  { name: "MongoDB Atlas", mark: "M" },
-  { name: "OpenAI", mark: "AI" },
+  { name: "Supabase", mark: "S" },
   { name: "Resend", mark: "@" },
 ];
 
@@ -70,13 +69,12 @@ export default function AboutPage() {
       <PageHeader
         eyebrow="Workspace"
         title="About Us"
-        description="The team behind Aether — built for Singapore SMEs, shown to hackathon judges as we execute."
       />
 
       <section className="panel p-5 md:p-7">
         <p className="accent-text text-[11px] font-semibold uppercase tracking-[0.18em]">Mission</p>
         <p className="mt-3 max-w-3xl text-lg font-medium leading-relaxed tracking-tight md:text-xl">
-          Building secure, autonomous AI agents to solve operational bottlenecks for Singapore&apos;s local businesses.
+          Agents that take the admin off Singapore SMEs.
         </p>
       </section>
 

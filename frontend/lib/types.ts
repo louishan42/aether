@@ -67,6 +67,15 @@ export type Stats = {
     customFiles?: number;
   };
   datasets?: { id: string; filename: string; kind: string; rowCount: number; importedAt: string }[];
+  charts?: {
+    invoicesByStatus: { label: string; value: number }[];
+    filesByKind: { label: string; value: number }[];
+    draftsByAgent: { label: string; value: number }[];
+    bookingsByStatus: { label: string; value: number }[];
+    grantsFit: { label: string; value: number }[];
+    complianceEvidence: { label: string; value: number }[];
+    agentLoad: { label: string; value: number }[];
+  };
   agents: AgentCard[];
   recentActivity: { id: string; action: string; result: string; timestamp: string; agent?: string }[];
   policy: {

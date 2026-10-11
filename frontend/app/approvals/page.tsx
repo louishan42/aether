@@ -24,7 +24,7 @@ export default function ApprovalsPage() {
   async function load() {
     const data = await api.pending();
     setDrafts(data.drafts);
-    setMessage(data.drafts.length ? "" : "No drafts yet. Load CSVs on Datasets, then prepare reminders on that page.");
+    setMessage(data.drafts.length ? "" : "Nothing waiting.");
   }
 
   useReload(load, setMessage);
@@ -39,7 +39,6 @@ export default function ApprovalsPage() {
       <PageHeader
         eyebrow="Operations"
         title="Approvals"
-        description="Reminder drafts come from invoice, customer, and booking files. Grant and compliance checklists come from Settings. Nothing is sent until you approve, then confirm."
       />
       <div className="flex flex-wrap gap-2">
         {filters.map((item) => (

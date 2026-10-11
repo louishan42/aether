@@ -46,7 +46,6 @@ export default function SettingsPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Settings"
-        description="Business profile and reminder rules. Grants and compliance use the profile you save here."
       />
       {message && <p className="text-sm">{message}</p>}
 

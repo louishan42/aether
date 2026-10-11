@@ -12,7 +12,7 @@ export function ChatDock() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [lines, setLines] = useState<Line[]>([
-    { role: "aether", text: "Chat sits here. Ask when you are ready — we can set exactly what it should do later." },
+    { role: "aether", text: "Ask about overdue bills, approvals, grants, or datasets." },
   ]);
   const end = useRef<HTMLDivElement>(null);
 
@@ -48,7 +48,7 @@ export function ChatDock() {
         <section className="chat-panel" aria-label="Chatbot">
           <header className="chat-panel-head">
             <strong>Chat</strong>
-            <span>Bottom right · tell us what it should do next</span>
+            <span>Ask the desk</span>
           </header>
           <div className="chat-log">
             {lines.map((line, index) => (

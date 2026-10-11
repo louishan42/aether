@@ -27,7 +27,7 @@ export async function answerChat(businessId: string, raw: string): Promise<ChatR
 
   if (!text || has(text, "help", "hi", "hello", "what can")) {
     return {
-      reply: "I can manage this desk with you. Try: overview, overdue invoices, run agents, approvals, datasets, grants, or approve INV-1001.",
+      reply: "Try: overdue, approvals, datasets, grants, or approve INV-1001.",
       links: [
         { href: "/dashboard", label: "Overview" },
         { href: "/approvals", label: "Approvals" },

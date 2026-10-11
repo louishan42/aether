@@ -32,7 +32,6 @@ export default function CompliancePage() {
       <PageHeader
         eyebrow="Records"
         title="Compliance"
-        description="Screening list for PDPA, ACRA, GST, CPF, and WSH from your profile and files. Not legal advice. Mark evidence when you have it."
         action={
           <button
             className="btn-primary"
@@ -42,7 +41,7 @@ export default function CompliancePage() {
               try {
                 const result = await api.analyze("compliance");
                 const count = Array.isArray(result?.drafts) ? result.drafts.length : gaps.length;
-                setMessage(`${count} gap note(s) are in Approvals. Mark evidence here after you attach proof.`);
+                setMessage(`${count} in Approvals.`);
                 await load();
               } catch (err) {
                 setMessage(err instanceof Error ? err.message : "Could not review compliance gaps.");
@@ -56,7 +55,7 @@ export default function CompliancePage() {
         }
       />
       {message && <p className="text-sm">{message}</p>}
-      <p className="text-sm text-muted">{gaps.length} open gap(s) · mark submitted when you have evidence</p>
+      <p className="text-sm text-muted">{gaps.length} open</p>
       <div className="space-y-3">
         {requirements.map((item) => (
           <article key={item.id} className="panel p-5">
