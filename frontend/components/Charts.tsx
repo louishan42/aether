@@ -1,8 +1,8 @@
 "use client";
 
-export type Slice = { label: string; value: number };
+import { CHART_COLORS } from "../lib/chartColors";
 
-const COLORS = ["#6d28d9", "#8b5cf6", "#c4b5fd", "#4c1d95", "#ddd6fe", "#5b21b6"];
+export type Slice = { label: string; value: number };
 
 export function PieChart({ title, slices }: { title: string; slices: Slice[] }) {
   const total = slices.reduce((sum, slice) => sum + slice.value, 0);
@@ -25,7 +25,7 @@ export function PieChart({ title, slices }: { title: string; slices: Slice[] }) 
       sweep >= Math.PI * 2 - 0.001
         ? `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx - 0.01} ${cy - r} Z`
         : `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
-    return { d, color: COLORS[index % COLORS.length], slice };
+    return { d, color: CHART_COLORS[index % CHART_COLORS.length] };
   });
 
   return (
@@ -36,12 +36,16 @@ export function PieChart({ title, slices }: { title: string; slices: Slice[] }) 
           {paths.map((path, index) => (
             <path key={index} d={path.d} fill={path.color} />
           ))}
+          <circle cx={cx} cy={cy} r="18" fill="#ffffff" />
         </svg>
         <ul className="space-y-1 text-sm">
           {slices.map((slice, index) => (
             <li key={slice.label} className="flex justify-between gap-3">
               <span>
-                <span className="mr-2 inline-block h-2 w-2 rounded-full" style={{ background: COLORS[index % COLORS.length] }} />
+                <span
+                  className="mr-2 inline-block h-2 w-2 rounded-full"
+                  style={{ background: CHART_COLORS[index % CHART_COLORS.length] }}
+                />
                 {slice.label}
               </span>
               <span className="tabular-nums">{slice.value}</span>
@@ -66,7 +70,10 @@ export function BarChart({ title, slices }: { title: string; slices: Slice[] }) 
               <span className="tabular-nums">{slice.value}</span>
             </div>
             <div className="bar-track mt-1">
-              <div className="bar-fill" style={{ width: `${(slice.value / max) * 100}%`, background: COLORS[index % COLORS.length] }} />
+              <div
+                className="h-full"
+                style={{ width: `${(slice.value / max) * 100}%`, background: CHART_COLORS[index % CHART_COLORS.length] }}
+              />
             </div>
           </div>
         ))}

@@ -1,6 +1,5 @@
 import type { Stats } from "./types";
-
-const COLORS = ["#6d28d9", "#8b5cf6", "#c4b5fd", "#4c1d95", "#ddd6fe"];
+import { CHART_COLORS } from "./chartColors";
 
 function drawPie(ctx: CanvasRenderingContext2D, slices: { label: string; value: number }[], x: number, y: number, r: number) {
   const total = slices.reduce((sum, slice) => sum + slice.value, 0) || 1;
@@ -11,7 +10,7 @@ function drawPie(ctx: CanvasRenderingContext2D, slices: { label: string; value: 
     ctx.moveTo(x, y);
     ctx.arc(x, y, r, angle, angle + sweep);
     ctx.closePath();
-    ctx.fillStyle = COLORS[index % COLORS.length];
+    ctx.fillStyle = CHART_COLORS[index % CHART_COLORS.length];
     ctx.fill();
     angle += sweep;
   });

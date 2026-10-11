@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import type { Stats } from "../../lib/types";
 import { useReload } from "../../lib/useReload";
-import { BarChart, PieChart } from "../../components/Charts";
-import { exportLockedReport } from "../../lib/exportReport";
 
 const hrefs: Record<string, string> = {
   invoice: "/invoices",
@@ -40,8 +38,6 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [password, setPassword] = useState("");
   const [clock, setClock] = useState("");
 
   async function load() {
@@ -74,24 +70,6 @@ export default function DashboardPage() {
   const totals = stats?.totals;
   const files = stats?.datasets ?? [];
   const fileCount = totals?.files ?? files.length;
-  const charts = stats?.charts ?? {
-    invoicesByStatus: [{ label: "Unpaid", value: totals?.invoices ?? 0 }],
-    filesByKind: [
-      { label: "Invoices", value: totals?.invoiceFiles ?? 0 },
-      { label: "Customers", value: totals?.customerFiles ?? 0 },
-      { label: "Bookings", value: totals?.appointmentFiles ?? 0 },
-      { label: "Custom", value: totals?.customFiles ?? 0 },
-    ],
-    draftsByAgent: stats?.agents.map((item) => ({ label: item.name, value: item.records })) ?? [],
-    bookingsByStatus: [{ label: "Bookings", value: totals?.appointments ?? 0 }],
-    grantsFit: [
-      { label: "Fit", value: totals?.grantMatches ?? 0 },
-      { label: "Gaps", value: totals?.complianceGaps ?? 0 },
-    ],
-    complianceEvidence: [{ label: "Gaps", value: totals?.complianceGaps ?? 0 }],
-    agentLoad: stats?.agents.map((item) => ({ label: item.name, value: item.records })) ?? [],
-  };
-
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -102,7 +80,10 @@ export default function DashboardPage() {
           </div>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">Overview</h1>
         </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Link href="/analysis" className="btn-teal text-center">
+            Analysis
+          </Link>
           <button
             className="btn-primary w-full sm:w-auto"
             disabled={busy}
@@ -120,37 +101,6 @@ export default function DashboardPage() {
           >
             {busy ? "Preparing…" : "Prepare record drafts"}
           </button>
-          <form
-            className="flex flex-col gap-2 sm:flex-row"
-            onSubmit={async (event) => {
-              event.preventDefault();
-              if (!stats || password.trim().length < 4) {
-                setError("Set a password of at least 4 characters to export.");
-                return;
-              }
-              setExporting(true);
-              try {
-                await exportLockedReport(stats, password.trim());
-                setError("");
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "Export failed");
-              } finally {
-                setExporting(false);
-              }
-            }}
-          >
-            <input
-              className="field"
-              type="password"
-              autoComplete="new-password"
-              placeholder="PDF password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-            <button className="btn-ink" type="submit" disabled={exporting || !stats}>
-              {exporting ? "Exporting…" : "Export locked PDF"}
-            </button>
-          </form>
         </div>
       </div>
 
@@ -168,23 +118,6 @@ export default function DashboardPage() {
         <Metric label="Rows in files" value={totals?.fileRows ?? 0} />
         <Metric label="Customers" value={totals?.customers ?? 0} />
         <Metric label="Bookings" value={totals?.appointments ?? 0} />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-xl font-medium tracking-tight">Agent analysis</h2>
-        <div className="grid gap-3 lg:grid-cols-3">
-          <PieChart title="Drafts by agent" slices={charts.draftsByAgent} />
-          <PieChart title="Invoices by status" slices={charts.invoicesByStatus} />
-          <PieChart title="Files by kind" slices={charts.filesByKind} />
-        </div>
-        <div className="grid gap-3 lg:grid-cols-2">
-          <BarChart title="Agent load" slices={charts.agentLoad} />
-          <PieChart title="Grant fit" slices={charts.grantsFit} />
-        </div>
-        <div className="grid gap-3 lg:grid-cols-2">
-          <PieChart title="Bookings" slices={charts.bookingsByStatus} />
-          <PieChart title="Compliance evidence" slices={charts.complianceEvidence} />
-        </div>
       </section>
 
       <section className="grid gap-3 md:grid-cols-6">

@@ -11,6 +11,7 @@ const groups = [
     label: "Operations",
     items: [
       { href: "/dashboard", label: "Overview" },
+      { href: "/analysis", label: "Analysis" },
       { href: "/approvals", label: "Approvals" },
     ],
   },
