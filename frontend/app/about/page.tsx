@@ -80,27 +80,30 @@ export default function AboutPage() {
         </p>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-3">
+      <section className="grid gap-5 lg:grid-cols-3">
         {team.map((member) => (
-          <article key={member.slug} className="panel flex flex-col p-5">
+          <article key={member.slug} className="about-card panel">
             <div className="about-photo">
               <img src={photos[member.slug]} alt={member.name} style={{ objectPosition: member.photoPos }} />
+              <span className="about-photo-name">{member.short}</span>
             </div>
-            <h2 className="mt-4 text-xl font-semibold tracking-tight">
-              {member.name} <span className="text-muted">({member.short})</span>
-            </h2>
-            <p className="mt-1 text-sm text-muted">{member.role}</p>
-            <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm">
-              {member.contributions.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <div className="mt-auto flex flex-wrap items-end justify-between gap-4 pt-5">
-              <a className="btn-primary" href={member.linkedin} target="_blank" rel="noreferrer">
-                Connect on LinkedIn
-              </a>
-              <div className="about-qr" title={member.linkedin}>
-                <QRCodeSVG value={member.linkedin} size={96} bgColor="#ffffff" fgColor="#3b0764" level="M" />
+            <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
+              <h2 className="text-xl font-semibold tracking-tight">
+                {member.name} <span className="text-muted">({member.short})</span>
+              </h2>
+              <p className="mt-1 text-sm text-muted">{member.role}</p>
+              <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm">
+                {member.contributions.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <div className="mt-auto flex flex-wrap items-end justify-between gap-4 pt-5">
+                <a className="btn-primary" href={member.linkedin} target="_blank" rel="noreferrer">
+                  Connect on LinkedIn
+                </a>
+                <div className="about-qr" title={member.linkedin}>
+                  <QRCodeSVG value={member.linkedin} size={84} bgColor="#faf8ff" fgColor="#3b0764" level="M" />
+                </div>
               </div>
             </div>
           </article>
