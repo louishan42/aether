@@ -37,16 +37,34 @@ export default function AppointmentsPage() {
         eyebrow="Records"
         title="Bookings"
         action={
-          <button
-            className="btn-primary"
-            disabled={!visible.length}
-            onClick={async () => {
-              await api.analyze("appointment");
-              setMessage("Reminder drafts are waiting in Approvals.");
-            }}
-          >
-            Prepare reminders
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="btn-ghost"
+              onClick={async () => {
+                try {
+                  const res = await fetch("/demo_bookings.csv");
+                  const csv = await res.text();
+                  const result = await api.importAny(csv, "demo_bookings.csv", "appointments");
+                  await load();
+                  setMessage(`demo_bookings.csv: ${result.mapped} bookings.`);
+                } catch (err) {
+                  setMessage(err instanceof Error ? err.message : "Demo load failed");
+                }
+              }}
+            >
+              Load demo bookings
+            </button>
+            <button
+              className="btn-primary"
+              disabled={!visible.length}
+              onClick={async () => {
+                await api.analyze("appointment");
+                setMessage("Reminder drafts are waiting in Approvals.");
+              }}
+            >
+              Prepare reminders
+            </button>
+          </div>
         }
       />
       <section className="panel p-5">

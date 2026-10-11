@@ -25,14 +25,13 @@ export function DatasetFilter({
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    if (filesProp) return;
     api
       .records()
       .then((data) => setLoaded(listedDatasets(data)))
       .catch(() => setLoaded([]));
-  }, [filesProp]);
+  }, []);
 
-  const files = filesProp ?? loaded;
+  const files = loaded.length ? loaded : filesProp ?? [];
 
   useEffect(() => {
     if (!files.length) return;

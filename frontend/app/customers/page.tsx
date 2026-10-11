@@ -37,16 +37,34 @@ export default function CustomersPage() {
         eyebrow="Records"
         title="Customers"
         action={
-          <button
-            className="btn-primary"
-            disabled={!visible.length}
-            onClick={async () => {
-              await api.analyze("customer");
-              setMessage("Drafts are waiting in Approvals.");
-            }}
-          >
-            Prepare follow-ups
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="btn-ghost"
+              onClick={async () => {
+                try {
+                  const res = await fetch("/demo_customers.csv");
+                  const csv = await res.text();
+                  const result = await api.importAny(csv, "demo_customers.csv", "customers");
+                  await load();
+                  setMessage(`demo_customers.csv: ${result.mapped} customers.`);
+                } catch (err) {
+                  setMessage(err instanceof Error ? err.message : "Demo load failed");
+                }
+              }}
+            >
+              Load demo customers
+            </button>
+            <button
+              className="btn-primary"
+              disabled={!visible.length}
+              onClick={async () => {
+                await api.analyze("customer");
+                setMessage("Drafts are waiting in Approvals.");
+              }}
+            >
+              Prepare follow-ups
+            </button>
+          </div>
         }
       />
       <section className="panel p-5">

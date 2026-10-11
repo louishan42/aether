@@ -61,6 +61,7 @@ export default function GrantsPage() {
         }
       />
       <DatasetFilter />
+      <p className="text-sm text-muted">Grants use industry in Settings, not a CSV.</p>
       {!profileReady && (
         <p className="panel p-4 text-sm">
           Set industry in{" "}
