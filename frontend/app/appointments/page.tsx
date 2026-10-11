@@ -63,8 +63,8 @@ export default function AppointmentsPage() {
         </Link>
         .
       </p>
-      <section className="panel overflow-hidden">
-        <table className="w-full text-left text-sm">
+      <section className="panel table-wrap">
+        <table className="w-full min-w-[32rem] text-left text-sm">
           <thead className="bg-paper text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Customer</th>

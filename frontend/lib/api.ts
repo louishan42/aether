@@ -86,6 +86,11 @@ export const api = {
       "/api/workspace/datasets/import",
       { method: "POST", body: JSON.stringify({ csv, filename, kind }) },
     ),
+  chat: (message: string) =>
+    request<{ reply: string; links: { href: string; label: string }[] }>("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }),
   deleteDataset: (id: string) =>
     request<{ filename: string; removed: { invoices: number; customers: number; appointments: number } }>(
       `/api/workspace/datasets/${id}`,

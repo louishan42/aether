@@ -200,7 +200,7 @@ export default function DatasetsPage() {
                 Delete
               </button>
             </div>
-            <table className="mt-3 w-full text-left text-sm">
+            <table className="mt-3 w-full min-w-[20rem] text-left text-sm">
               <thead>
                 <tr className="text-[11px] uppercase tracking-[0.14em] text-muted">
                   {headers.map((header) => (

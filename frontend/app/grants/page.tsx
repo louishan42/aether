@@ -35,7 +35,7 @@ export default function GrantsPage() {
         description="Matches your business profile to a Singapore grant catalog. This is a shortlist, not a funding decision."
         action={
           <button
-            className="btn-primary"
+            className="btn-primary w-full sm:w-auto"
             onClick={async () => {
               await api.analyze("grant");
               setMessage("Checklists are waiting in Approvals.");

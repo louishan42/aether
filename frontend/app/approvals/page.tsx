@@ -48,7 +48,7 @@ export default function ApprovalsPage() {
           <button
             key={item}
             onClick={() => setFilter(item)}
-            className={`px-3 py-1 text-sm ${filter === item ? "chip-on" : "btn-ghost"}`}
+            className={`min-h-11 px-3 py-2 text-sm ${filter === item ? "chip-on" : "btn-ghost"}`}
           >
             {item}
           </button>
@@ -69,7 +69,7 @@ export default function ApprovalsPage() {
             <p className="mt-2 whitespace-pre-wrap text-sm">{draft.body}</p>
             <p className="mt-3 text-sm text-muted">{draft.rationale}</p>
             <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-muted">Status: {draft.status}</p>
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               {draft.status === "pending" && (
                 <>
                   <button onClick={() => api.decide(draft.id, "approved").then(load)} className="btn-primary">

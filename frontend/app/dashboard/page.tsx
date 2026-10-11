@@ -68,13 +68,13 @@ export default function DashboardPage() {
             <span className="live-dot" />
             Live desk · {clock || "--:--:--"} SGT
           </div>
-          <h1 className="mt-2 text-4xl font-semibold tracking-tight">Overview</h1>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">Overview</h1>
           <p className="mt-2 max-w-xl text-sm text-muted">
             Collections, grants, follow-ups, compliance, and bookings — drafts sit in Approvals until you send them.
           </p>
         </div>
-        <button
-          className="btn-primary"
+          <button
+          className="btn-primary w-full sm:w-auto"
           disabled={busy}
           onClick={async () => {
             setBusy(true);
@@ -122,7 +122,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="panel overflow-hidden p-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="live-dot" />
             <h2 className="font-medium tracking-tight">Activity stream</h2>
@@ -134,8 +134,8 @@ export default function DashboardPage() {
         {!stats?.recentActivity.length && <p className="mt-4 text-sm text-muted">Quiet. Nothing logged yet.</p>}
         <ul className="mt-4 space-y-0 font-mono text-[13px]">
           {stats?.recentActivity.map((item) => (
-            <li key={item.id} className="flex justify-between gap-4 border-t border-edge py-2.5">
-              <span>
+            <li key={item.id} className="flex flex-col gap-1 border-t border-edge py-2.5 sm:flex-row sm:justify-between sm:gap-4">
+              <span className="break-all">
                 <span className="accent-text font-semibold">{item.action}</span> {item.result}
               </span>
               <span className="shrink-0 text-muted">{new Date(item.timestamp).toLocaleTimeString()}</span>

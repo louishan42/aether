@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   description: "Collections, grants, follow-ups, compliance, and bookings",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">

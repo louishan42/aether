@@ -6,6 +6,7 @@ import reminderRoutes from "./routes/reminders.js";
 import agentRoutes from "./routes/agent.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import workspaceRoutes from "./routes/workspace.js";
+import chatRoutes from "./routes/chat.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
@@ -50,6 +51,7 @@ app.use("/api/reminders", reminderRoutes);
 app.use("/api/agent", agentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/workspace", workspaceRoutes);
+app.use("/api/chat", chatRoutes);
 
 async function start() {
   const { loadSnapshot, seedFromCsvIfEmpty } = await import("./services/persist.js");
