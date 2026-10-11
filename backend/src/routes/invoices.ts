@@ -34,6 +34,7 @@ router.post("/", (req, res) => {
     status: data.status as InvoiceStatus,
     reminderCount: 0,
     lastReminderAt: null,
+    sourceImportId: null,
   };
   getStore().invoices.unshift(invoice);
   res.json({ invoice });

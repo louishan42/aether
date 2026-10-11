@@ -86,4 +86,9 @@ export const api = {
       "/api/workspace/datasets/import",
       { method: "POST", body: JSON.stringify({ csv, filename, kind }) },
     ),
+  deleteDataset: (id: string) =>
+    request<{ filename: string; removed: { invoices: number; customers: number; appointments: number } }>(
+      `/api/workspace/datasets/${id}`,
+      { method: "DELETE" },
+    ),
 };

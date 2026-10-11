@@ -58,6 +58,7 @@ describe("invoice eligibility", () => {
     status: "unpaid",
     reminderCount: 0,
     lastReminderAt: null,
+    sourceImportId: null,
   };
 
   it("keeps paid invoices out", () => {

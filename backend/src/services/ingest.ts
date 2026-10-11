@@ -72,6 +72,7 @@ function asInvoice(businessId: string, row: Record<string, string>): Invoice | n
     status,
     reminderCount: 0,
     lastReminderAt: null,
+    sourceImportId: null,
   };
 }
 
@@ -88,6 +89,7 @@ function asCustomer(businessId: string, row: Record<string, string>): FollowUpCu
     lastContactAt: parseWhen(last),
     notes: pick(row, ["notes", "note", "comment", "remarks"]),
     followUpCount: 0,
+    sourceImportId: null,
   };
 }
 
@@ -106,6 +108,7 @@ function asAppointment(businessId: string, row: Record<string, string>): Appoint
     startsAt,
     status,
     reminderCount: 0,
+    sourceImportId: null,
   };
 }
 
@@ -117,31 +120,6 @@ export function ingestCsv(businessId: string, csv: string, filename = "upload.cs
   const kind = preferredKind && preferredKind !== "custom" ? preferredKind : detectKind(parsed, filename);
   const headers = Object.keys(parsed[0] ?? {});
   const store = getStore();
-
-  let mapped = 0;
-  if (kind === "invoices") {
-    for (const row of parsed) {
-      const invoice = asInvoice(businessId, row);
-      if (!invoice) continue;
-      store.invoices.unshift(invoice);
-      mapped += 1;
-    }
-  } else if (kind === "customers") {
-    for (const row of parsed) {
-      const customer = asCustomer(businessId, row);
-      if (!customer) continue;
-      store.customers.unshift(customer);
-      mapped += 1;
-    }
-  } else if (kind === "appointments") {
-    for (const row of parsed) {
-      const appointment = asAppointment(businessId, row);
-      if (!appointment) continue;
-      store.appointments.unshift(appointment);
-      mapped += 1;
-    }
-  }
-
   const file = recordImport({
     businessId,
     filename,
@@ -151,6 +129,33 @@ export function ingestCsv(businessId: string, csv: string, filename = "upload.cs
     rows: parsed,
   });
 
+  let mapped = 0;
+  if (kind === "invoices") {
+    for (const row of parsed) {
+      const invoice = asInvoice(businessId, row);
+      if (!invoice) continue;
+      invoice.sourceImportId = file.id;
+      store.invoices.unshift(invoice);
+      mapped += 1;
+    }
+  } else if (kind === "customers") {
+    for (const row of parsed) {
+      const customer = asCustomer(businessId, row);
+      if (!customer) continue;
+      customer.sourceImportId = file.id;
+      store.customers.unshift(customer);
+      mapped += 1;
+    }
+  } else if (kind === "appointments") {
+    for (const row of parsed) {
+      const appointment = asAppointment(businessId, row);
+      if (!appointment) continue;
+      appointment.sourceImportId = file.id;
+      store.appointments.unshift(appointment);
+      mapped += 1;
+    }
+  }
+
   return {
     file,
     kind,
@@ -158,5 +163,53 @@ export function ingestCsv(businessId: string, csv: string, filename = "upload.cs
     stored: parsed.length,
     headers,
     agentReady: kind === "invoices" || kind === "customers" || kind === "appointments",
+  };
+}
+
+export function deleteImportedDataset(businessId: string, importId: string) {
+  const store = getStore();
+  const file = store.imports.find((row) => row.id === importId && row.businessId === businessId);
+  if (!file) throw new Error("Dataset not found.");
+
+  const invoiceIds = new Set(
+    store.invoices.filter((row) => row.businessId === businessId && row.sourceImportId === importId).map((row) => row.id),
+  );
+  const customerIds = new Set(
+    store.customers.filter((row) => row.businessId === businessId && row.sourceImportId === importId).map((row) => row.id),
+  );
+  const appointmentIds = new Set(
+    store.appointments.filter((row) => row.businessId === businessId && row.sourceImportId === importId).map((row) => row.id),
+  );
+
+  if (!invoiceIds.size && file.kind === "invoices") {
+    const numbers = new Set(file.rows.map((row) => row.invoice_number || row.invoice || row.id).filter(Boolean));
+    store.invoices
+      .filter((row) => row.businessId === businessId && numbers.has(row.invoiceNumber))
+      .forEach((row) => invoiceIds.add(row.id));
+  }
+  if (!customerIds.size && file.kind === "customers") {
+    const emails = new Set(file.rows.map((row) => (row.email || row.customer_email || "").toLowerCase()).filter(Boolean));
+    store.customers
+      .filter((row) => row.businessId === businessId && emails.has(row.email.toLowerCase()))
+      .forEach((row) => customerIds.add(row.id));
+  }
+  if (!appointmentIds.size && file.kind === "appointments") {
+    const keys = new Set(file.rows.map((row) => `${row.customer_email || row.email}|${row.starts_at || row.start || ""}`));
+    store.appointments
+      .filter((row) => row.businessId === businessId && keys.has(`${row.customerEmail}|${row.startsAt}`))
+      .forEach((row) => appointmentIds.add(row.id));
+  }
+
+  const recordIds = new Set([...invoiceIds, ...customerIds, ...appointmentIds]);
+  store.invoices = store.invoices.filter((row) => !invoiceIds.has(row.id));
+  store.customers = store.customers.filter((row) => !customerIds.has(row.id));
+  store.appointments = store.appointments.filter((row) => !appointmentIds.has(row.id));
+  store.drafts = store.drafts.filter((draft) => !recordIds.has(draft.recordId) && !recordIds.has(draft.invoiceId));
+  store.imports = store.imports.filter((row) => row.id !== importId);
+
+  return {
+    filename: file.filename,
+    kind: file.kind,
+    removed: { invoices: invoiceIds.size, customers: customerIds.size, appointments: appointmentIds.size },
   };
 }

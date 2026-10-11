@@ -33,15 +33,18 @@ export async function loadSnapshot() {
     dueDate: row.dueDate.toISOString(),
     lastReminderAt: row.lastReminderAt?.toISOString() ?? null,
     status: row.status as Invoice["status"],
+    sourceImportId: row.sourceImportId ?? null,
   }));
   store.customers = customers.map((row) => ({
     ...row,
     lastContactAt: row.lastContactAt?.toISOString() ?? null,
+    sourceImportId: row.sourceImportId ?? null,
   }));
   store.appointments = appointments.map((row) => ({
     ...row,
     startsAt: row.startsAt.toISOString(),
     status: row.status as Appointment["status"],
+    sourceImportId: row.sourceImportId ?? null,
   }));
   store.drafts = drafts.map((row) => ({
     ...row,

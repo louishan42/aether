@@ -170,11 +170,36 @@ export default function DatasetsPage() {
         const headers = file.headers?.length ? file.headers : Object.keys(file.rows?.[0] ?? {});
         return (
           <section key={file.id} className="panel overflow-x-auto p-5">
-            <h2 className="font-medium tracking-tight">{file.filename}</h2>
-            <p className="mt-1 text-sm text-muted">
-              {file.kind} · {file.rowCount} rows · {new Date(file.importedAt).toLocaleString()}
-              {file.kind === "custom" ? " · stored for review (no agent yet)" : " · wired to an agent"}
-            </p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="font-medium tracking-tight">{file.filename}</h2>
+                <p className="mt-1 text-sm text-muted">
+                  {file.kind} · {file.rowCount} rows · {new Date(file.importedAt).toLocaleString()}
+                  {file.kind === "custom" ? " · stored for review (no agent yet)" : " · wired to an agent"}
+                </p>
+              </div>
+              <button
+                className="btn-ghost"
+                disabled={busy}
+                onClick={async () => {
+                  if (!window.confirm(`Delete ${file.filename}? This removes its rows, drafts, and database records.`)) return;
+                  setBusy(true);
+                  try {
+                    const result = await api.deleteDataset(file.id);
+                    await load();
+                    setMessage(
+                      `Deleted ${result.filename}. Removed invoices ${result.removed.invoices}, customers ${result.removed.customers}, bookings ${result.removed.appointments}.`,
+                    );
+                  } catch (err) {
+                    setMessage(err instanceof Error ? err.message : "Delete failed");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                Delete
+              </button>
+            </div>
             <table className="mt-3 w-full text-left text-sm">
               <thead>
                 <tr className="text-[11px] uppercase tracking-[0.14em] text-muted">

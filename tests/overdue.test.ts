@@ -24,6 +24,7 @@ function invoice(overrides: Partial<Invoice> = {}): Invoice {
     status: "unpaid",
     reminderCount: 0,
     lastReminderAt: null,
+    sourceImportId: null,
     ...overrides,
   };
 }

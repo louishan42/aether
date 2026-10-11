@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { TenantRequest } from "../middleware/tenant.js";
 import { addLog, getProfile, getStore, setProfile } from "../services/store.js";
 import { saveSnapshot } from "../services/persist.js";
-import { ingestCsv } from "../services/ingest.js";
+import { deleteImportedDataset, ingestCsv } from "../services/ingest.js";
 import { runAllAgents } from "../../../agents/runners/run.js";
 import { GRANT_CATALOG } from "../../../agents/catalogs/grants.js";
 import { COMPLIANCE_CATALOG } from "../../../agents/catalogs/compliance.js";
@@ -21,6 +21,24 @@ router.get("/records", (req, res) => {
     files: store.imports.filter((row) => row.businessId === businessId),
     datasets: store.imports.filter((row) => row.businessId === businessId),
   });
+});
+
+router.delete("/datasets/:id", async (req, res) => {
+  const { businessId } = req as TenantRequest;
+  try {
+    const result = deleteImportedDataset(businessId, req.params.id);
+    addLog({
+      agent: "system",
+      agentRunId: null,
+      invoiceId: null,
+      action: "delete_dataset",
+      result: `${result.filename} (${result.kind}) invoices=${result.removed.invoices}; customers=${result.removed.customers}; bookings=${result.removed.appointments}`,
+    });
+    await saveSnapshot();
+    res.json(result);
+  } catch (error) {
+    res.status(404).json({ error: error instanceof Error ? error.message : "Delete failed" });
+  }
 });
 
 router.post("/datasets/import", async (req, res) => {
@@ -104,6 +122,7 @@ router.post("/customers", (req, res) => {
     lastContactAt: parsed.data.lastContactAt ? new Date(parsed.data.lastContactAt).toISOString() : null,
     notes: parsed.data.notes ?? "",
     followUpCount: 0,
+    sourceImportId: null,
   };
   getStore().customers.unshift(customer);
   addLog({ agent: "customer", agentRunId: null, invoiceId: customer.id, action: "create_customer", result: customer.email });
@@ -187,6 +206,7 @@ router.post("/appointments", (req, res) => {
     startsAt: new Date(parsed.data.startsAt).toISOString(),
     status: "booked",
     reminderCount: 0,
+    sourceImportId: null,
   };
   getStore().appointments.unshift(appointment);
   addLog({ agent: "appointment", agentRunId: null, invoiceId: appointment.id, action: "create_booking", result: appointment.customerEmail });

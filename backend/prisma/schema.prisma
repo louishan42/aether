@@ -20,6 +20,7 @@ model Invoice {
   status         String
   reminderCount  Int       @default(0)
   lastReminderAt DateTime?
+  sourceImportId String?
 }
 
 model FollowUpCustomer {
@@ -30,6 +31,7 @@ model FollowUpCustomer {
   lastContactAt DateTime?
   notes         String    @default("")
   followUpCount Int       @default(0)
+  sourceImportId String?
 }
 
 model Appointment {
@@ -40,6 +42,7 @@ model Appointment {
   startsAt      DateTime
   status        String
   reminderCount Int      @default(0)
+  sourceImportId String?
 }
 
 model AgentDraft {

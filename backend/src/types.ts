@@ -14,6 +14,7 @@ export type Invoice = {
   status: InvoiceStatus;
   reminderCount: number;
   lastReminderAt: string | null;
+  sourceImportId: string | null;
 };
 
 export type FollowUpCustomer = {
@@ -24,6 +25,7 @@ export type FollowUpCustomer = {
   lastContactAt: string | null;
   notes: string;
   followUpCount: number;
+  sourceImportId: string | null;
 };
 
 export type Appointment = {
@@ -34,6 +36,7 @@ export type Appointment = {
   startsAt: string;
   status: "booked" | "cancelled" | "completed";
   reminderCount: number;
+  sourceImportId: string | null;
 };
 
 export type ComplianceEvidence = {
