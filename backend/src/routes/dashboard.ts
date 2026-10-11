@@ -19,17 +19,53 @@ function inFiles(ids: Set<string> | null, sourceImportId?: string | null) {
   return Boolean(sourceImportId && ids.has(sourceImportId));
 }
 
+function parseRange(fromRaw: unknown, toRaw: unknown) {
+  const from = typeof fromRaw === "string" && fromRaw ? new Date(fromRaw) : null;
+  const to = typeof toRaw === "string" && toRaw ? new Date(toRaw) : null;
+  if (from && Number.isNaN(from.getTime())) return { from: null, to: null };
+  if (to && Number.isNaN(to.getTime())) return { from: null, to: null };
+  return { from, to };
+}
+
+function inRange(iso: string | null | undefined, from: Date | null, to: Date | null) {
+  if (!from && !to) return true;
+  if (!iso) return false;
+  const time = new Date(iso).getTime();
+  if (Number.isNaN(time)) return false;
+  if (from && time < from.getTime()) return false;
+  if (to && time > to.getTime()) return false;
+  return true;
+}
+
 router.get("/stats", (req, res) => {
   const { businessId } = req as TenantRequest;
   const store = getStore();
   const policy = getPolicy(businessId);
   const profile = enrichProfile(businessId);
   const ids = parseFileIds(req.query.files);
-  const invoices = store.invoices.filter((invoice) => invoice.businessId === businessId && inFiles(ids, invoice.sourceImportId));
+  const { from, to } = parseRange(req.query.from, req.query.to);
+  const invoices = store.invoices.filter(
+    (invoice) =>
+      invoice.businessId === businessId &&
+      inFiles(ids, invoice.sourceImportId) &&
+      inRange(invoice.dueDate, from, to),
+  );
   const overdue = invoices.filter((invoice) => isEligible(invoice, policy).ok);
-  const customers = store.customers.filter((row) => row.businessId === businessId && inFiles(ids, row.sourceImportId));
-  const appointments = store.appointments.filter((row) => row.businessId === businessId && inFiles(ids, row.sourceImportId));
-  const files = store.imports.filter((row) => row.businessId === businessId && (!ids || ids.has(row.id)));
+  const customers = store.customers.filter(
+    (row) =>
+      row.businessId === businessId &&
+      inFiles(ids, row.sourceImportId) &&
+      inRange(row.lastContactAt, from, to),
+  );
+  const appointments = store.appointments.filter(
+    (row) =>
+      row.businessId === businessId &&
+      inFiles(ids, row.sourceImportId) &&
+      inRange(row.startsAt, from, to),
+  );
+  const files = store.imports.filter(
+    (row) => row.businessId === businessId && (!ids || ids.has(row.id)) && inRange(row.importedAt, from, to),
+  );
   const grantRows = grantMatches(businessId);
   const grants = grantRows.filter((grant) => grant.match.ok);
   const complianceAll = complianceItems(businessId);
@@ -37,6 +73,7 @@ router.get("/stats", (req, res) => {
   const buckets = draftBuckets(businessId);
   const tenantDrafts = store.drafts.filter((draft) => {
     if (!draftInTenant(businessId, draft.recordId, draft.agent)) return false;
+    if (!inRange(draft.generatedAt, from, to)) return false;
     if (!ids) return true;
     const invoice = store.invoices.find((row) => row.id === draft.recordId);
     const customer = store.customers.find((row) => row.id === draft.recordId);
@@ -141,7 +178,7 @@ router.get("/stats", (req, res) => {
         { label: "Compliance", value: complianceGaps },
       ],
     },
-    recentActivity: store.logs.slice(0, 8),
+    recentActivity: store.logs.filter((item) => inRange(item.timestamp, from, to)).slice(0, 8),
     policy,
     profile,
   });

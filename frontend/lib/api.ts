@@ -24,8 +24,12 @@ async function request<T>(path: string, init?: RequestInit, direct = false): Pro
 }
 
 export const api = {
-  stats: (files = "all") =>
-    request<import("./types").Stats>(`/api/dashboard/stats?files=${encodeURIComponent(files)}`),
+  stats: (files = "all", range?: { from?: string; to?: string }) => {
+    const query = new URLSearchParams({ files });
+    if (range?.from) query.set("from", range.from);
+    if (range?.to) query.set("to", range.to);
+    return request<import("./types").Stats>(`/api/dashboard/stats?${query.toString()}`);
+  },
   invoices: () => request<{ invoices: import("./types").Invoice[] }>("/api/invoices"),
   overdue: () => request<{ invoices: import("./types").Invoice[] }>("/api/invoices/overdue"),
   createInvoice: (body: {

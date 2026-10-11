@@ -10,22 +10,25 @@ import { exportLockedReport } from "../../lib/exportReport";
 import { PageHeader } from "../../components/PageHeader";
 import { DatasetFilter } from "../../components/DatasetFilter";
 import { useFileView, viewToQuery } from "../../lib/fileView";
+import { periodRange, type Period } from "../../lib/period";
 
 export default function AnalysisPage() {
   const { view } = useFileView();
+  const [period, setPeriod] = useState<Period>("month");
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
   const [password, setPassword] = useState("");
+  const range = periodRange(period);
 
   async function load() {
-    setStats(await api.stats(viewToQuery(view)));
+    setStats(await api.stats(viewToQuery(view), { from: range.from, to: range.to }));
   }
 
   useReload(load, setError);
   useEffect(() => {
     void load();
-  }, [view]);
+  }, [view, period]);
   const charts = chartsFromStats(stats);
   const totals = stats?.totals;
 
@@ -45,7 +48,7 @@ export default function AnalysisPage() {
               }
               setExporting(true);
               try {
-                await exportLockedReport(stats, password.trim());
+                await exportLockedReport(stats, password.trim(), range.label);
                 setError("");
               } catch (err) {
                 setError(err instanceof Error ? err.message : "Export failed");
@@ -70,6 +73,25 @@ export default function AnalysisPage() {
       />
 
       {error && <p className="text-sm text-red-700">{error}</p>}
+
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            ["month", `This month · ${periodRange("month").label}`],
+            ["30", "Last 30 days"],
+            ["all", "All time"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            className={period === id ? "chip-on min-h-11 px-3 py-2 text-sm" : "btn-ghost text-sm"}
+            onClick={() => setPeriod(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       <DatasetFilter />
 

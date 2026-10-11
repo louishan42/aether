@@ -16,7 +16,7 @@ function drawPie(ctx: CanvasRenderingContext2D, slices: { label: string; value: 
   });
 }
 
-export async function exportLockedReport(stats: Stats, password: string) {
+export async function exportLockedReport(stats: Stats, password: string, periodLabel = "All time") {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({
     encryption: {
@@ -28,18 +28,19 @@ export async function exportLockedReport(stats: Stats, password: string) {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("Aether agent analysis", 14, 20);
+  doc.text("Aether monthly analysis", 14, 20);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(`Generated ${new Date().toLocaleString("en-SG", { timeZone: "Asia/Singapore" })} SGT`, 14, 28);
-  doc.text(`Business: ${stats.profile?.name || "Demo"}`, 14, 34);
+  doc.text(`Period: ${periodLabel}`, 14, 28);
+  doc.text(`Generated ${new Date().toLocaleString("en-SG", { timeZone: "Asia/Singapore" })} SGT`, 14, 34);
+  doc.text(`Business: ${stats.profile?.name || "Demo"}`, 14, 40);
 
   const totals = stats.totals;
   doc.setFontSize(11);
   doc.text(
     `Invoices ${totals.invoices} · Overdue ${totals.overdue} · Customers ${totals.customers} · Bookings ${totals.appointments} · Grant fits ${totals.grantMatches}`,
     14,
-    44,
+    48,
   );
 
   const canvas = document.createElement("canvas");
@@ -87,5 +88,6 @@ export async function exportLockedReport(stats: Stats, password: string) {
     if (y > 280) break;
   }
 
-  doc.save("aether-agent-analysis.pdf");
+  const slug = periodLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  doc.save(`aether-analysis-${slug || "period"}.pdf`);
 }
