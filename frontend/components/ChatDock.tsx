@@ -22,7 +22,7 @@ export function ChatDock() {
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
-  }, [lines, open]);
+  }, [lines, open, busy]);
 
   async function send() {
     const message = input.trim();
@@ -47,8 +47,20 @@ export function ChatDock() {
       {open && (
         <section className="chat-panel" aria-label="Chatbot">
           <header className="chat-panel-head">
-            <strong>Chat</strong>
-            <span>Ask the desk</span>
+            <div className="chat-panel-who">
+              <span className="chat-avatar" aria-hidden>
+                Ae
+              </span>
+              <div>
+                <strong>Aether</strong>
+                <span>
+                  <i className="live-dot" /> Desk chat
+                </span>
+              </div>
+            </div>
+            <button type="button" className="chat-close" aria-label="Close chatbot" onClick={() => setOpen(false)}>
+              Close
+            </button>
           </header>
           <div className="chat-log">
             {lines.map((line, index) => (
@@ -56,6 +68,13 @@ export function ChatDock() {
                 <p className="whitespace-pre-wrap">{line.text}</p>
               </div>
             ))}
+            {busy && (
+              <div className="chat-bubble aether chat-typing" aria-live="polite">
+                <span />
+                <span />
+                <span />
+              </div>
+            )}
             <div ref={end} />
           </div>
           <form
@@ -66,20 +85,20 @@ export function ChatDock() {
             }}
           >
             <input
-              className="field"
+              className="field chat-input"
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Type a message"
+              placeholder={busy ? "Waiting…" : "Ask the desk"}
               disabled={busy}
             />
-            <button className="btn-ink" type="submit" disabled={busy}>
+            <button className="btn-primary chat-send" type="submit" disabled={busy}>
               Send
             </button>
           </form>
         </section>
       )}
       <button
-        className="chat-fab"
+        className={`chat-fab ${open ? "open" : ""}`}
         type="button"
         aria-label={open ? "Close chatbot" : "Open chatbot"}
         onClick={() => setOpen((value) => !value)}
