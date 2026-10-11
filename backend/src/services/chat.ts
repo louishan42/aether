@@ -126,6 +126,13 @@ export async function answerChat(businessId: string, raw: string): Promise<ChatR
     return { reply: `${gaps} compliance item(s) apply to the current profile. Screening only, not legal advice.`, links: [{ href: "/compliance", label: "Compliance" }] };
   }
 
+  if (has(text, "analys", "chart", "pdf", "report")) {
+    return {
+      reply: `${invoices.length} invoices, ${overdue.length} overdue, ${customers.length} customers, ${appointments.length} bookings. Charts and the locked PDF are on Analysis.`,
+      links: [{ href: "/analysis", label: "Open Analysis" }],
+    };
+  }
+
   if (has(text, "overview", "stat", "dashboard", "how many", "summary")) {
     return {
       reply: `Overview is combined from ${files.length} dataset file(s): ${invoices.length} invoices (${overdue.length} overdue), ${customers.length} customers, ${appointments.length} bookings, ${buckets.pendingSend} reminder draft(s), ${buckets.pendingChecklists} checklist(s).`,
@@ -158,10 +165,7 @@ export async function answerChat(businessId: string, raw: string): Promise<ChatR
       );
       if (reply) return { reply, links };
     } catch {
-      return {
-        reply: "Groq did not answer. Check GROQ_API_KEY on Render, then try again.",
-        links,
-      };
+      // Fall through to the desk fallback below.
     }
   }
 

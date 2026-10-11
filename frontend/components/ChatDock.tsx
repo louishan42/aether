@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../lib/api";
 
-type Line = { role: "you" | "aether"; text: string };
+type Line = { role: "you" | "aether"; text: string; links?: { href: string; label: string }[] };
 
 export function ChatDock() {
   const [mounted, setMounted] = useState(false);
@@ -32,7 +32,7 @@ export function ChatDock() {
     setBusy(true);
     try {
       const result = await api.chat(message);
-      setLines((current) => [...current, { role: "aether", text: result.reply }]);
+      setLines((current) => [...current, { role: "aether", text: result.reply, links: result.links }]);
     } catch (err) {
       setLines((current) => [...current, { role: "aether", text: err instanceof Error ? err.message : "Chat failed" }]);
     } finally {
@@ -66,6 +66,15 @@ export function ChatDock() {
             {lines.map((line, index) => (
               <div key={index} className={`chat-bubble ${line.role}`}>
                 <p className="whitespace-pre-wrap">{line.text}</p>
+                {line.links?.length ? (
+                  <div className="chat-links">
+                    {line.links.map((item) => (
+                      <a key={item.href} className="chat-link" href={item.href}>
+                        {item.label}
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ))}
             {busy && (

@@ -1,7 +1,14 @@
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const RETIRED = new Set(["llama-3.1-8b-instant", "llama-3.3-70b-versatile"]);
+const DEFAULT_MODEL = "openai/gpt-oss-20b";
 
 export function groqReady() {
   return Boolean(process.env.GROQ_API_KEY?.trim());
+}
+
+function modelId() {
+  const wanted = process.env.GROQ_MODEL?.trim() || DEFAULT_MODEL;
+  return RETIRED.has(wanted) ? DEFAULT_MODEL : wanted;
 }
 
 export async function groqReply(system: string, user: string) {
@@ -15,7 +22,7 @@ export async function groqReply(system: string, user: string) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: process.env.GROQ_MODEL?.trim() || "llama-3.1-8b-instant",
+      model: modelId(),
       temperature: 0.3,
       max_tokens: 280,
       messages: [
