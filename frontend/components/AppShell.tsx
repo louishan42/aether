@@ -49,17 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (pathname === "/") {
-    return (
-      <div className="min-h-screen bg-white" onMouseMove={moveSpot}>
-        <div className="fx" aria-hidden>
-          <div className="fx-orb fx-orb-a" />
-          <div className="fx-orb fx-orb-b" />
-          <div className="fx-grid" />
-          <div className="fx-spot" />
-        </div>
-        <main className="page">{children}</main>
-      </div>
-    );
+    return <main className="page">{children}</main>;
   }
 
   return (

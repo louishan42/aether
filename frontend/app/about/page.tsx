@@ -14,6 +14,19 @@ const photos = {
 
 const team = [
   {
+    slug: "shah" as const,
+    photoPos: "center 30%",
+    name: "Shah Htet Naing",
+    short: "Shah",
+    role: "AI and cyber",
+    linkedin: "https://www.linkedin.com/in/shah-htet-naing",
+    contributions: [
+      "Agent logic and scoring.",
+      "Security review and access.",
+      "PII handling in drafts.",
+    ],
+  },
+  {
     slug: "louis" as const,
     photoPos: "center 78%",
     name: "Thi Han Htun",
@@ -21,22 +34,9 @@ const team = [
     role: "Full-stack",
     linkedin: "https://www.linkedin.com/in/thi-han-htun-65a22736a/",
     contributions: [
-      "Next.js UI, Express API, and Prisma/Supabase.",
-      "CSV ingest, datasets, and combined desk pages.",
-      "Five agents, Approvals, and Analysis export.",
-      "Vercel, Render, and live deploy.",
-    ],
-  },
-  {
-    slug: "shah" as const,
-    photoPos: "center 30%",
-    name: "Shah Htet Naing",
-    short: "Shah",
-    role: "Frontend",
-    linkedin: "https://www.linkedin.com/in/shah-htet-naing",
-    contributions: [
-      "Layout, theme, and About cards.",
-      "Sidebar and page shell.",
+      "Next.js desk and Express API.",
+      "Postgres records and ingest.",
+      "Approvals, export, deploy.",
     ],
   },
   {
@@ -44,12 +44,12 @@ const team = [
     photoPos: "center 18%",
     name: "Nyan Lin Htet",
     short: "Loki",
-    role: "Product",
+    role: "Product and ops",
     linkedin: "https://www.linkedin.com/in/nyan-lin-htet-1a6849240/",
     contributions: [
-      "SME fit.",
-      "Operator flow.",
-      "Go-to-market.",
+      "SME workflow and copy.",
+      "Operator paths on the desk.",
+      "Pilot and go-to-market.",
     ],
   },
 ];
