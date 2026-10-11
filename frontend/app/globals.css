@@ -165,6 +165,21 @@ body {
   background: #0f766e;
 }
 
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: #d97706;
+  color: #ffffff;
+}
+
+.btn-gold:hover {
+  background: #b45309;
+}
+
 .btn-ghost {
   border: 1px solid #c4b5fd;
   background: #ffffff;
@@ -519,6 +534,110 @@ body {
 
   .fx-orb-b {
     left: 8%;
+  }
+}
+
+.landing {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 1.25rem 1.25rem 4rem;
+}
+
+.landing-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.landing-top .logo-word {
+  color: #1e1233;
+  text-shadow: none;
+}
+
+.landing-hero {
+  margin: 4.5rem auto 3.5rem;
+  max-width: 44rem;
+  text-align: center;
+}
+
+.landing-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6d28d9;
+}
+
+.landing-title {
+  margin-top: 0.75rem;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.landing-lead {
+  margin-top: 1rem;
+  color: #6b5a80;
+}
+
+.landing-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.landing-grid.two {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .landing-grid.two {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.landing-list {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.95rem;
+}
+
+.landing-list li::before {
+  content: "– ";
+  color: #9ca3af;
+}
+
+.landing-list.on li::before {
+  content: "+ ";
+  color: #0d9488;
+}
+
+.landing-accent {
+  border-color: #c4b5fd;
+  box-shadow: 0 12px 32px rgba(109, 40, 217, 0.08);
+}
+
+.landing-premium {
+  background: #12323a;
+  color: #ffffff;
+  border-color: #12323a;
+}
+
+.landing-premium .panel:hover,
+.landing-premium:hover {
+  transform: none;
+}
+
+@media (max-width: 767px) {
+  .btn-gold {
+    min-height: 44px;
   }
 }
 
