@@ -138,6 +138,34 @@ export default function DatasetsPage() {
           >
             {busy ? "Importing…" : "Load demo_data"}
           </button>
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                const notes: string[] = [];
+                for (const [path, name, asKind] of [
+                  ["/demo_customers.csv", "demo_customers.csv", "customers"],
+                  ["/demo_bookings.csv", "demo_bookings.csv", "appointments"],
+                ] as const) {
+                  const res = await fetch(path);
+                  if (!res.ok) throw new Error(`Could not load ${name}`);
+                  const result = await importOne(await res.text(), name, asKind);
+                  notes.push(`${name}: ${result.mapped} ${result.kind}`);
+                }
+                await load();
+                setMessage(`${notes.join(" · ")}. Open Customers and Bookings.`);
+              } catch (err) {
+                setMessage(err instanceof Error ? err.message : "Demo load failed");
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Load demo customers & bookings
+          </button>
           <a className="btn-ghost" href="/demo_data.csv" download="demo_data.csv">
             Download demo_data.csv
           </a>
