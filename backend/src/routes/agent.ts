@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { TenantRequest } from "../middleware/tenant.js";
 import { getStore } from "../services/store.js";
+import { saveSnapshot } from "../services/persist.js";
 import {
   runAllAgents,
   runAppointmentAgent,
@@ -24,18 +25,24 @@ router.post("/analyze", async (req, res) => {
   const { businessId } = req as TenantRequest;
   const kind = typeof req.body?.agent === "string" ? req.body.agent : "invoice";
   if (kind === "all") {
-    res.json(await runAllAgents(businessId));
+    const result = await runAllAgents(businessId);
+    await saveSnapshot();
+    res.json(result);
     return;
   }
   const runner = runners[kind as keyof typeof runners] ?? runInvoiceAgent;
-  res.json(await runner(businessId));
+  const result = await runner(businessId);
+  await saveSnapshot();
+  res.json(result);
 });
 
 router.post("/:kind/analyze", async (req, res) => {
   const { businessId } = req as TenantRequest;
   const runner = runners[req.params.kind as keyof typeof runners];
   if (!runner) return res.status(404).json({ error: "unknown agent" });
-  res.json(await runner(businessId));
+  const result = await runner(businessId);
+  await saveSnapshot();
+  res.json(result);
 });
 
 router.get("/activity", (req, res) => {

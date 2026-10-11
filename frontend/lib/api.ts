@@ -38,7 +38,7 @@ export const api = {
   importCsv: (csv: string, filename?: string) =>
     request("/api/invoices/import", { method: "POST", body: JSON.stringify({ csv, filename }) }, true),
   analyze: (agent: string = "invoice") =>
-    request("/api/agent/analyze", { method: "POST", body: JSON.stringify({ agent }) }),
+    request<{ drafts?: { id: string }[] }>("/api/agent/analyze", { method: "POST", body: JSON.stringify({ agent }) }),
   pending: () => request<{ drafts: import("./types").Draft[] }>("/api/reminders/pending"),
   decide: (id: string, decision: "approved" | "rejected") =>
     request(`/api/reminders/${id}/approve`, { method: "POST", body: JSON.stringify({ decision }) }),
@@ -50,7 +50,17 @@ export const api = {
   saveProfile: (profile: import("./types").BusinessProfile) =>
     request<{ profile: import("./types").BusinessProfile }>("/api/workspace/profile", { method: "POST", body: JSON.stringify(profile) }),
   grants: () =>
-    request<{ grants: { id: string; name: string; agency: string; summary: string; match: { ok: boolean; reason: string; score: number } }[]; profileReady: boolean }>(
+    request<{
+      grants: {
+        id: string;
+        name: string;
+        agency: string;
+        summary: string;
+        checklist?: string[];
+        match: { ok: boolean; reason: string; score: number };
+      }[];
+      profileReady: boolean;
+    }>(
       "/api/workspace/grants",
     ),
   customers: () => request<{ customers: { id: string; name: string; email: string; lastContactAt: string | null; notes: string }[] }>("/api/workspace/customers"),

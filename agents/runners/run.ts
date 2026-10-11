@@ -1,4 +1,5 @@
-import { addLog, getPolicy, getProfile, getStore } from "../../backend/src/services/store.js";
+import { addLog, getPolicy, getStore } from "../../backend/src/services/store.js";
+import { enrichProfile } from "../../backend/src/services/profile.js";
 import { createTools } from "../tools/index.js";
 import { daysOverdue } from "../../backend/src/services/overdue.js";
 import { GRANT_CATALOG } from "../catalogs/grants.js";
@@ -72,7 +73,7 @@ export async function runGrantAgent(businessId: string) {
   dropPending("grant");
   const store = getStore();
   const run = startRun(businessId, "grant");
-  const profile = getProfile(businessId);
+  const profile = enrichProfile(businessId);
   const tools = createTools(businessId);
   const matches = GRANT_CATALOG.map((grant) => ({ grant, verdict: grant.match(profile) })).filter((row) => row.verdict.ok);
   const created = [];
@@ -132,7 +133,7 @@ export async function runComplianceAgent(businessId: string) {
   dropPending("compliance");
   const store = getStore();
   const run = startRun(businessId, "compliance");
-  const profile = getProfile(businessId);
+  const profile = enrichProfile(businessId);
   const tools = createTools(businessId);
   const applicable = COMPLIANCE_CATALOG.filter((req) => req.appliesWhen(profile));
   const created = [];

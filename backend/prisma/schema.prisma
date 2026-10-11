@@ -89,6 +89,14 @@ model BusinessProfile {
   hasGstRegistration Boolean @default(false)
 }
 
+model ComplianceEvidence {
+  id             String @id
+  businessId     String
+  requirementId  String
+  status         String
+  note           String @default("")
+}
+
 model ReminderPolicy {
   businessId               String @id
   minimumOverdueDays       Int

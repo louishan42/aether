@@ -29,7 +29,7 @@ function asDate(value: string | Date | null | undefined) {
 
 export async function loadSnapshot() {
   const store = getStore();
-  const [invoices, customers, appointments, drafts, logs, imports, profiles, policies] = await Promise.all([
+  const [invoices, customers, appointments, drafts, logs, imports, profiles, policies, evidence] = await Promise.all([
     prisma.invoice.findMany(),
     prisma.followUpCustomer.findMany(),
     prisma.appointment.findMany(),
@@ -38,6 +38,7 @@ export async function loadSnapshot() {
     prisma.datasetImport.findMany({ orderBy: { importedAt: "desc" } }),
     prisma.businessProfile.findMany(),
     prisma.reminderPolicy.findMany(),
+    prisma.complianceEvidence.findMany(),
   ]);
 
   store.invoices = invoices.map((row) => ({
@@ -80,6 +81,10 @@ export async function loadSnapshot() {
     headers: jsonArray<string>(row.headers, []),
     rows: jsonArray<Record<string, string>>(row.rows, []),
   }));
+  store.evidence = evidence.map((row) => ({
+    ...row,
+    status: row.status as (typeof store.evidence)[number]["status"],
+  }));
   for (const profile of profiles) store.profiles[profile.businessId] = profile;
   for (const policy of policies) store.policies[policy.businessId] = policy;
   if (syncDeskFromDatasets() || pruneOrphanDrafts()) await saveSnapshot();
@@ -96,6 +101,7 @@ export async function saveSnapshot() {
     prisma.datasetImport.deleteMany(),
     prisma.businessProfile.deleteMany(),
     prisma.reminderPolicy.deleteMany(),
+    prisma.complianceEvidence.deleteMany(),
   ];
   if (store.invoices.length) {
     ops.push(
@@ -163,6 +169,9 @@ export async function saveSnapshot() {
         })),
       }),
     );
+  }
+  if (store.evidence.length) {
+    ops.push(prisma.complianceEvidence.createMany({ data: store.evidence }));
   }
   const profiles = Object.values(store.profiles);
   if (profiles.length) ops.push(prisma.businessProfile.createMany({ data: profiles }));

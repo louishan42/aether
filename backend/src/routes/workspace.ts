@@ -5,8 +5,7 @@ import { addLog, getProfile, getStore, setProfile } from "../services/store.js";
 import { saveSnapshot } from "../services/persist.js";
 import { deleteImportedDataset, deskCounts, ingestCsv } from "../services/ingest.js";
 import { runAgentsForKind } from "../../../agents/runners/run.js";
-import { GRANT_CATALOG } from "../../../agents/catalogs/grants.js";
-import { COMPLIANCE_CATALOG } from "../../../agents/catalogs/compliance.js";
+import { complianceItems, grantMatches } from "../services/profile.js";
 import type { Appointment, FollowUpCustomer } from "../types.js";
 
 const router = Router();
@@ -90,16 +89,8 @@ router.post("/profile", async (req, res) => {
 
 router.get("/grants", (req, res) => {
   const { businessId } = req as TenantRequest;
-  const profile = getProfile(businessId);
-  const grants = GRANT_CATALOG.map((grant) => ({
-    id: grant.id,
-    name: grant.name,
-    agency: grant.agency,
-    summary: grant.summary,
-    checklist: grant.checklist,
-    match: grant.match(profile),
-  }));
-  res.json({ grants, profileReady: Boolean(profile.industry) });
+  const grants = grantMatches(businessId);
+  res.json({ grants, profileReady: grants.some((grant) => grant.match.ok) });
 });
 
 router.get("/customers", (req, res) => {
@@ -145,23 +136,10 @@ router.post("/customers/import", async (req, res) => {
 
 router.get("/compliance", (req, res) => {
   const { businessId } = req as TenantRequest;
-  const profile = getProfile(businessId);
-  const store = getStore();
-  const requirements = COMPLIANCE_CATALOG.map((reqItem) => {
-    const evidence = store.evidence.find((row) => row.businessId === businessId && row.requirementId === reqItem.id);
-    return {
-      id: reqItem.id,
-      framework: reqItem.framework,
-      title: reqItem.title,
-      summary: reqItem.summary,
-      applies: reqItem.appliesWhen(profile),
-      evidenceStatus: evidence?.status ?? "missing",
-    };
-  });
-  res.json({ requirements });
+  res.json({ requirements: complianceItems(businessId) });
 });
 
-router.post("/compliance/:id/evidence", (req, res) => {
+router.post("/compliance/:id/evidence", async (req, res) => {
   const { businessId } = req as TenantRequest;
   const schema = z.object({
     status: z.enum(["missing", "submitted", "waived"]),
@@ -184,7 +162,13 @@ router.post("/compliance/:id/evidence", (req, res) => {
     evidence.status = parsed.data.status;
     evidence.note = parsed.data.note ?? evidence.note;
   }
+  if (evidence.status === "submitted" || evidence.status === "waived") {
+    store.drafts = store.drafts.filter(
+      (draft) => !(draft.agent === "compliance" && draft.recordId === req.params.id && draft.status === "pending"),
+    );
+  }
   addLog({ agent: "compliance", agentRunId: null, invoiceId: req.params.id, action: "update_evidence", result: evidence.status });
+  await saveSnapshot();
   res.json({ evidence });
 });
 
