@@ -166,6 +166,8 @@ body {
 }
 
 .btn-gold {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -634,6 +636,17 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.landing-shell .btn-primary,
+.landing-shell .btn-ghost,
+.landing-shell .btn-gold,
+.landing-shell .btn-ink {
+  border-radius: 0.7rem;
+}
+
+.landing-shell .btn-gold {
+  box-shadow: 0 8px 18px rgba(217, 119, 6, 0.22);
 }
 
 .landing-top .logo-word {
