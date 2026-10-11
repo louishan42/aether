@@ -5,6 +5,7 @@ import { isEligible } from "./overdue.js";
 import { saveSnapshot } from "./persist.js";
 import { draftBuckets, openDrafts } from "./drafts.js";
 import { addLog, getPolicy, getProfile, getStore } from "./store.js";
+import { groqReady, groqReply } from "./groq.js";
 
 export type ChatLink = { href: string; label: string };
 export type ChatReply = { reply: string; links: ChatLink[] };
@@ -136,11 +137,36 @@ export async function answerChat(businessId: string, raw: string): Promise<ChatR
     return { reply: "To delete a dataset and update invoices, customers, bookings, and drafts, use Delete on the Datasets page.", links: [{ href: "/datasets", label: "Datasets" }] };
   }
 
+  const links: ChatLink[] = [
+    { href: "/dashboard", label: "Overview" },
+    { href: "/approvals", label: "Approvals" },
+    { href: "/datasets", label: "Datasets" },
+  ];
+
+  if (groqReady()) {
+    try {
+      const snapshot = [
+        `Files: ${files.length} (${files.map((row) => row.filename).slice(0, 8).join(", ") || "none"})`,
+        `Invoices: ${invoices.length}, overdue: ${overdue.length}`,
+        `Customers: ${customers.length}, bookings: ${appointments.length}`,
+        `Reminder drafts waiting: ${buckets.pendingSend}, checklists: ${buckets.pendingChecklists}`,
+        `Industry: ${profile.industry || "not set"}`,
+      ].join("\n");
+      const reply = await groqReply(
+        "You are the Aether desk helper for a Singapore SME. Answer in short plain sentences. Use only the snapshot. Approve-then-act: you never send email. Grants and compliance are screening, not legal advice. Do not claim PDPA certification or a live PII scrubber. If asked to send or pay, tell them to use Approvals.",
+        `Snapshot:\n${snapshot}\n\nQuestion: ${raw.trim()}`,
+      );
+      if (reply) return { reply, links };
+    } catch {
+      return {
+        reply: "Groq did not answer. Check GROQ_API_KEY on Render, then try again.",
+        links,
+      };
+    }
+  }
+
   return {
     reply: "I didn’t catch that. Try overview, overdue, run agents, approvals, datasets, or grants.",
-    links: [
-      { href: "/chat", label: "Chat" },
-      { href: "/dashboard", label: "Overview" },
-    ],
+    links,
   };
 }

@@ -69,7 +69,7 @@ app.get("/", (_req, res) => {
 });
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, service: "aether", dataset: "supabase" });
+  res.json({ ok: true, service: "aether", dataset: "supabase", groq: Boolean(process.env.GROQ_API_KEY?.trim()) });
 });
 
 app.use("/api/invoices", invoiceRoutes);
