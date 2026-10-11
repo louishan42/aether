@@ -56,7 +56,7 @@ export default function DatasetsPage() {
         const csv = await file.text();
         const result = await importOne(csv, file.name, kind);
         notes.push(
-          `${file.name}: ${result.kind} (${result.stored} rows) · invoices ${result.refreshed?.invoices ?? 0}, customers ${result.refreshed?.customers ?? 0}, bookings ${result.refreshed?.appointments ?? 0}${result.agentReady ? " · agents ran" : ""}`,
+          `${file.name}: treated as ${result.kind} (${result.stored} rows, ${result.mapped} matched). ${result.reason ?? ""}`,
         );
       }
       await load();
@@ -73,7 +73,7 @@ export default function DatasetsPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Datasets"
-        description="Drop a CSV and Invoices, Customers, and Bookings refresh from that file. A new invoice, customer, or booking sheet replaces the previous one of that type."
+        description="Drop any CSV. If it is invoices, customers, or bookings, that page and that agent update. If the columns do not match, it stays here as a review file and no agent runs."
       />
       {message && <p className="text-sm text-red-800">{message}</p>}
 
@@ -139,7 +139,7 @@ export default function DatasetsPage() {
               setPaste("");
               await load();
               setMessage(
-                `Pasted as ${result.kind} (${result.stored} rows) · invoices ${result.refreshed?.invoices ?? 0}, customers ${result.refreshed?.customers ?? 0}, bookings ${result.refreshed?.appointments ?? 0}.`,
+                `Pasted as ${result.kind} (${result.stored} rows, ${result.mapped} matched). ${result.reason ?? ""}`,
               );
             } catch (err) {
               setMessage(err instanceof Error ? err.message : "Import failed");
@@ -176,7 +176,9 @@ export default function DatasetsPage() {
                 <h2 className="font-medium tracking-tight">{file.filename}</h2>
                 <p className="mt-1 text-sm text-muted">
                   {file.kind} · {file.rowCount} rows · {new Date(file.importedAt).toLocaleString()}
-                  {file.kind === "custom" ? " · stored for review (no agent yet)" : " · wired to an agent"}
+                  {file.kind === "custom"
+                    ? " · review file · no agent (columns did not match invoices, customers, or bookings)"
+                    : ` · ${file.kind} agent`}
                 </p>
               </div>
               <button

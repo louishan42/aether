@@ -81,38 +81,47 @@ function parseWhen(value: string) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-export function detectKind(rows: Record<string, string>[], filename = ""): DetectedKind {
+function looksLikePayroll(filename: string, rows: Record<string, string>[]) {
   const name = filename.toLowerCase();
   const headers = Object.keys(rows[0] ?? {}).map(norm).join(" ");
-  const scores = {
-    invoices: 0,
-    customers: 0,
-    appointments: 0,
-  };
-  if (/invoice|billing|payment|overdue|ar_|payroll|gusto|salary/.test(name) || /invoice/.test(headers)) scores.invoices += 3;
-  if (/customer|client|contact|lead|employee|staff|payroll|gusto/.test(name) || /last_contact|employee_name/.test(headers)) scores.customers += 3;
-  if (/book|appoint|schedule/.test(name) || /starts_at|booking/.test(headers)) scores.appointments += 3;
-  if (/amount|due|total|pay_date/.test(headers)) scores.invoices += 2;
-  if (/email/.test(headers) && /name/.test(headers)) scores.customers += 1;
-  if (/start|datetime|when|scheduled/.test(headers)) scores.appointments += 2;
-  const winner = (Object.entries(scores) as ["invoices" | "customers" | "appointments", number][]).sort((a, b) => b[1] - a[1])[0];
-  return winner[1] > 0 ? winner[0] : "custom";
+  if (/payroll|gusto|salary|payslip/.test(name)) return true;
+  if (/employee_id/.test(headers) && /pay_date|gross|role/.test(headers) && !/invoice/.test(headers)) return true;
+  return false;
+}
+
+function mappingRate(kind: DetectedKind, rows: Record<string, string>[]) {
+  if (kind === "custom" || !rows.length) return 0;
+  let hits = 0;
+  for (let i = 0; i < rows.length; i += 1) {
+    if (kind === "invoices" && asInvoice("score", rows[i], i)) hits += 1;
+    if (kind === "customers" && asCustomer("score", rows[i], i)) hits += 1;
+    if (kind === "appointments" && asAppointment("score", rows[i], i)) hits += 1;
+  }
+  return hits / rows.length;
+}
+
+export function detectKind(rows: Record<string, string>[], filename = "", preferred?: DetectedKind): DetectedKind {
+  if (looksLikePayroll(filename, rows)) return "custom";
+  const kinds: DetectedKind[] = ["invoices", "customers", "appointments"];
+  const ranked = kinds
+    .map((kind) => ({ kind, score: mappingRate(kind, rows) }))
+    .sort((a, b) => b.score - a.score);
+  if (preferred && preferred !== "custom" && mappingRate(preferred, rows) >= 0.4) return preferred;
+  if (ranked[0].score >= 0.4) return ranked[0].kind;
+  return "custom";
 }
 
 export function asInvoice(businessId: string, row: Record<string, string>, index = 0): Invoice | null {
+  const invoiceNumber = pick(row, ["invoice_number", "invoice_no", "invoice", "inv_no"]);
   const customerName = pickName(row);
-  const amountSgd = parseAmount(pick(row, ["amount_sgd", "amount", "total", "value", "price", "balance", "grand_total", "pay", "gross"]));
-  if (!customerName || !(amountSgd > 0)) return null;
-  const whenRaw = pick(row, ["due_date", "due", "invoice_date", "pay_date", "payment_date", "date"]);
-  const dueDate = parseWhen(whenRaw) ?? new Date().toISOString();
-  const employeeId = pick(row, ["employee_id", "staff_id", "worker_id"]);
-  const invoiceNumber =
-    pick(row, ["invoice_number", "invoice_no", "invoice", "inv_no"]) || [employeeId, whenRaw, `R${index + 1}`].filter(Boolean).join("-");
-  const customerEmail = synthEmail(row, customerName, index);
-  const statusRaw = pick(row, ["status", "state", "type"]).toLowerCase();
+  const customerEmail = pickEmail(row);
+  const amountSgd = parseAmount(pick(row, ["amount_sgd", "amount", "total", "value", "price", "balance", "grand_total"]));
+  const dueDate = parseWhen(pick(row, ["due_date", "due", "invoice_date"]));
+  if (!invoiceNumber || !customerName || !looksLikeEmail(customerEmail) || !dueDate || !(amountSgd > 0)) return null;
+  const statusRaw = pick(row, ["status", "state"]).toLowerCase();
   const status = statusRaw === "paid" || statusRaw === "disputed" ? statusRaw : "unpaid";
   return {
-    id: stableId(`inv:${businessId}:${invoiceNumber}:${customerName}:${dueDate}`),
+    id: stableId(`inv:${businessId}:${invoiceNumber}:${customerEmail}`),
     businessId,
     customerId: stableId(`custid:${businessId}:${customerEmail}`),
     invoiceNumber,
@@ -129,17 +138,16 @@ export function asInvoice(businessId: string, row: Record<string, string>, index
 
 export function asCustomer(businessId: string, row: Record<string, string>, index = 0): FollowUpCustomer | null {
   const name = pickName(row);
-  if (!name) return null;
-  const email = synthEmail(row, name, index);
-  const last = pick(row, ["last_contact_at", "last_contact", "last_seen", "updated_at", "contacted_at", "pay_date", "date"]);
-  const role = pick(row, ["role", "title", "type"]);
+  const email = pickEmail(row);
+  if (!name || !looksLikeEmail(email)) return null;
+  const last = pick(row, ["last_contact_at", "last_contact", "last_seen", "updated_at", "contacted_at"]);
   return {
     id: stableId(`cust:${businessId}:${email}`),
     businessId,
     name,
     email,
     lastContactAt: parseWhen(last),
-    notes: pick(row, ["notes", "note", "comment", "remarks"]) || role,
+    notes: pick(row, ["notes", "note", "comment", "remarks"]),
     followUpCount: 0,
     sourceImportId: null,
   };
@@ -147,9 +155,9 @@ export function asCustomer(businessId: string, row: Record<string, string>, inde
 
 export function asAppointment(businessId: string, row: Record<string, string>, index = 0): Appointment | null {
   const customerName = pickName(row);
-  const startsAt = parseWhen(pick(row, ["starts_at", "start_at", "start", "datetime", "scheduled_at", "appointment_at", "booking_at", "pay_date", "date"]));
-  if (!customerName || !startsAt) return null;
-  const customerEmail = synthEmail(row, customerName, index);
+  const customerEmail = pickEmail(row);
+  const startsAt = parseWhen(pick(row, ["starts_at", "start_at", "start", "datetime", "scheduled_at", "appointment_at", "booking_at"]));
+  if (!customerName || !looksLikeEmail(customerEmail) || !startsAt) return null;
   const statusRaw = pick(row, ["status"]).toLowerCase();
   const status = statusRaw === "cancelled" || statusRaw === "completed" ? statusRaw : "booked";
   return {
@@ -167,33 +175,26 @@ export function asAppointment(businessId: string, row: Record<string, string>, i
 function applyMappedRows(businessId: string, kind: DetectedKind, rows: Record<string, string>[], fileId: string) {
   const store = getStore();
   let mapped = 0;
-  const seenCustomers = new Set(store.customers.filter((row) => row.businessId === businessId).map((row) => row.email.toLowerCase()));
-
   rows.forEach((row, index) => {
-    if (kind !== "appointments") {
+    if (kind === "invoices") {
       const invoice = asInvoice(businessId, row, index);
-      if (invoice) {
-        invoice.sourceImportId = fileId;
-        store.invoices.unshift(invoice);
-        mapped += 1;
-      }
-    }
-    if (kind === "customers" || kind === "invoices" || kind === "custom") {
+      if (!invoice) return;
+      invoice.sourceImportId = fileId;
+      store.invoices.unshift(invoice);
+      mapped += 1;
+    } else if (kind === "customers") {
       const customer = asCustomer(businessId, row, index);
-      if (customer && !seenCustomers.has(customer.email.toLowerCase())) {
-        customer.sourceImportId = fileId;
-        store.customers.unshift(customer);
-        seenCustomers.add(customer.email.toLowerCase());
-        if (kind === "customers" && !asInvoice(businessId, row, index)) mapped += 1;
-      }
-    }
-    if (kind === "appointments") {
+      if (!customer) return;
+      if (store.customers.some((item) => item.businessId === businessId && item.email.toLowerCase() === customer.email.toLowerCase())) return;
+      customer.sourceImportId = fileId;
+      store.customers.unshift(customer);
+      mapped += 1;
+    } else if (kind === "appointments") {
       const appointment = asAppointment(businessId, row, index);
-      if (appointment) {
-        appointment.sourceImportId = fileId;
-        store.appointments.unshift(appointment);
-        mapped += 1;
-      }
+      if (!appointment) return;
+      appointment.sourceImportId = fileId;
+      store.appointments.unshift(appointment);
+      mapped += 1;
     }
   });
   return mapped;
@@ -216,7 +217,7 @@ export function ingestCsv(businessId: string, csv: string, filename = "upload.cs
   if (!parsed.length) {
     throw new Error("Need a header row and at least one data row.");
   }
-  const kind = preferredKind && preferredKind !== "custom" ? preferredKind : detectKind(parsed, filename);
+  const kind = detectKind(parsed, filename, preferredKind);
   const headers = Object.keys(parsed[0] ?? {});
   dropStaleFiles(businessId, filename, kind);
   const file = recordImport({
@@ -236,6 +237,11 @@ export function ingestCsv(businessId: string, csv: string, filename = "upload.cs
     stored: parsed.length,
     headers,
     agentReady: kind === "invoices" || kind === "customers" || kind === "appointments",
+    agent: kind === "invoices" ? "invoice" : kind === "customers" ? "customer" : kind === "appointments" ? "appointment" : null,
+    reason:
+      kind === "custom"
+        ? "Columns do not match invoices, customers, or bookings, so this file stays on Datasets only. Agents did not run."
+        : `Matched as ${kind}. Only the ${kind === "invoices" ? "collections" : kind === "customers" ? "follow-up" : "booking"} agent ran.`,
   };
 }
 
@@ -265,6 +271,7 @@ export function syncDeskFromDatasets() {
   store.appointments = [...manuals.appointments];
   for (const file of store.imports) {
     if (!file.rows?.length) continue;
+    file.kind = detectKind(file.rows, file.filename, file.kind);
     applyMappedRows(file.businessId, file.kind, file.rows, file.id);
   }
   pruneOrphanDrafts();

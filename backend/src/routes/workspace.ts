@@ -4,7 +4,7 @@ import type { TenantRequest } from "../middleware/tenant.js";
 import { addLog, getProfile, getStore, setProfile } from "../services/store.js";
 import { saveSnapshot } from "../services/persist.js";
 import { deleteImportedDataset, deskCounts, ingestCsv } from "../services/ingest.js";
-import { runAllAgents } from "../../../agents/runners/run.js";
+import { runAgentsForKind } from "../../../agents/runners/run.js";
 import { GRANT_CATALOG } from "../../../agents/catalogs/grants.js";
 import { COMPLIANCE_CATALOG } from "../../../agents/catalogs/compliance.js";
 import type { Appointment, FollowUpCustomer } from "../types.js";
@@ -54,7 +54,7 @@ router.post("/datasets/import", async (req, res) => {
       filename,
       kind === "invoices" || kind === "customers" || kind === "appointments" || kind === "custom" ? kind : undefined,
     );
-    if (result.agentReady) await runAllAgents(businessId);
+    if (result.agentReady) await runAgentsForKind(businessId, result.kind);
     await saveSnapshot();
     res.json({
       ...result,

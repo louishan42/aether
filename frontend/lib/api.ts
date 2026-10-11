@@ -100,7 +100,10 @@ export const api = {
       kind: string;
       mapped: number;
       stored: number;
+      mapped: number;
       agentReady: boolean;
+      agent: string | null;
+      reason?: string;
       file: { filename: string };
       refreshed: { invoices: number; customers: number; appointments: number };
     }>(

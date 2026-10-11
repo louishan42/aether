@@ -200,3 +200,10 @@ export async function runAllAgents(businessId: string) {
   const appointment = await runAppointmentAgent(businessId);
   return { invoice, grant, customer, compliance, appointment };
 }
+
+export async function runAgentsForKind(businessId: string, kind: string) {
+  if (kind === "invoices") return runInvoiceAgent(businessId);
+  if (kind === "customers") return runCustomerAgent(businessId);
+  if (kind === "appointments") return runAppointmentAgent(businessId);
+  return { skipped: true, reason: "No matching agent for this file type." };
+}
