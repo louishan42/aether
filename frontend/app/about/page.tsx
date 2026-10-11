@@ -1,11 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { PageHeader } from "../../components/PageHeader";
-import shahPhoto from "./photos/shah.jpg";
-import louisPhoto from "./photos/louis.jpg";
-import lokiPhoto from "./photos/loki.jpg";
+import shahPhoto from "./photos/shah";
+import louisPhoto from "./photos/louis";
+import lokiPhoto from "./photos/loki";
 
 const photos = {
   shah: shahPhoto,
@@ -85,13 +84,7 @@ export default function AboutPage() {
         {team.map((member) => (
           <article key={member.slug} className="panel flex flex-col p-5">
             <div className="about-photo">
-              <Image
-                src={photos[member.slug]}
-                alt={member.name}
-                fill
-                sizes="(min-width: 1024px) 30vw, 90vw"
-                style={{ objectFit: "cover", objectPosition: member.photoPos }}
-              />
+              <img src={photos[member.slug]} alt={member.name} style={{ objectPosition: member.photoPos }} />
             </div>
             <h2 className="mt-4 text-xl font-semibold tracking-tight">
               {member.name} <span className="text-muted">({member.short})</span>
