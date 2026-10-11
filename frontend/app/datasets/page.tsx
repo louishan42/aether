@@ -86,7 +86,7 @@ export default function DatasetsPage() {
         eyebrow="Workspace"
         title="Datasets"
       />
-      {message && <p className="text-sm text-red-800">{message}</p>}
+      {message && <p className="text-sm">{message}</p>}
 
       <section
         className={`panel drop-zone p-8 text-center ${active ? "active" : ""}`}
@@ -140,7 +140,7 @@ export default function DatasetsPage() {
           </button>
           <button
             type="button"
-            className="btn-ghost"
+            className="btn-primary"
             disabled={busy}
             onClick={async () => {
               setBusy(true);
