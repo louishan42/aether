@@ -26,8 +26,11 @@ app.use(
         callback(null, true);
         return;
       }
-      callback(new Error("Origin not allowed"));
+      callback(null, false);
     },
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "x-business-id", "x-user-id"],
+    maxAge: 86400,
   }),
 );
 app.use(express.json({ limit: "32mb" }));
