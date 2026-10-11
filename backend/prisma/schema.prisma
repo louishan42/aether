@@ -71,6 +71,8 @@ model DatasetImport {
   kind       String
   rowCount   Int
   importedAt DateTime
+  headers    Json     @default("[]")
+  rows       Json     @default("[]")
 }
 
 model BusinessProfile {

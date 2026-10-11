@@ -116,6 +116,8 @@ export function recordImport(entry: Omit<DatasetImport, "id" | "importedAt"> & {
     filename: entry.filename,
     kind: entry.kind,
     rowCount: entry.rowCount,
+    headers: entry.headers ?? [],
+    rows: entry.rows ?? [],
   };
   getStore().imports.unshift(row);
   return row;

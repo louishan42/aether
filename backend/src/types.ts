@@ -101,7 +101,9 @@ export type DatasetImport = {
   id: string;
   businessId: string;
   filename: string;
-  kind: "invoices" | "customers" | "appointments";
+  kind: "invoices" | "customers" | "appointments" | "custom";
   rowCount: number;
   importedAt: string;
+  headers: string[];
+  rows: Record<string, string>[];
 };

@@ -62,6 +62,28 @@ export const api = {
       invoices: import("./types").Invoice[];
       customers: { id: string; name: string; email: string; lastContactAt: string | null; notes: string }[];
       appointments: { id: string; customerName: string; customerEmail: string; startsAt: string; status: string }[];
-      files: { id: string; filename: string; kind: string; rowCount: number; importedAt: string }[];
+      files: {
+        id: string;
+        filename: string;
+        kind: string;
+        rowCount: number;
+        importedAt: string;
+        headers: string[];
+        rows: Record<string, string>[];
+      }[];
+      datasets: {
+        id: string;
+        filename: string;
+        kind: string;
+        rowCount: number;
+        importedAt: string;
+        headers: string[];
+        rows: Record<string, string>[];
+      }[];
     }>("/api/workspace/records"),
+  importAny: (csv: string, filename?: string, kind?: string) =>
+    request<{ kind: string; mapped: number; stored: number; agentReady: boolean; file: { filename: string } }>(
+      "/api/workspace/datasets/import",
+      { method: "POST", body: JSON.stringify({ csv, filename, kind }) },
+    ),
 };

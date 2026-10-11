@@ -1,11 +1,10 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { importRows } from "./csv.js";
 import { prisma } from "./db.js";
-import { addLog, getStore, recordImport, setPolicy, setProfile } from "./store.js";
-import type { AgentDraft, Appointment, FollowUpCustomer, Invoice } from "../types.js";
-import { z } from "zod";
+import { addLog, getStore, setPolicy, setProfile } from "./store.js";
+import { ingestCsv } from "./ingest.js";
+import type { AgentDraft, Appointment, Invoice } from "../types.js";
 
 const DEMO_BUSINESS_ID = process.env.DEMO_BUSINESS_ID ?? "demo-business";
 
@@ -56,9 +55,14 @@ export async function loadSnapshot() {
     agent: row.agent as (typeof store.logs)[number]["agent"],
   }));
   store.imports = imports.map((row) => ({
-    ...row,
-    importedAt: row.importedAt.toISOString(),
+    id: row.id,
+    businessId: row.businessId,
+    filename: row.filename,
     kind: row.kind as (typeof store.imports)[number]["kind"],
+    rowCount: row.rowCount,
+    importedAt: row.importedAt.toISOString(),
+    headers: Array.isArray(row.headers) ? (row.headers as string[]) : [],
+    rows: Array.isArray(row.rows) ? (row.rows as Record<string, string>[]) : [],
   }));
   for (const profile of profiles) store.profiles[profile.businessId] = profile;
   for (const policy of policies) store.policies[policy.businessId] = policy;
@@ -131,8 +135,14 @@ export async function saveSnapshot() {
     ops.push(
       prisma.datasetImport.createMany({
         data: store.imports.map((row) => ({
-          ...row,
+          id: row.id,
+          businessId: row.businessId,
+          filename: row.filename,
+          kind: row.kind,
+          rowCount: row.rowCount,
           importedAt: new Date(row.importedAt),
+          headers: row.headers,
+          rows: row.rows,
         })),
       }),
     );
@@ -154,73 +164,9 @@ export async function seedFromCsvIfEmpty() {
   const invoiceCsv = await readFile(path.join(root, "invoices.csv"), "utf8");
   const customerCsv = await readFile(path.join(root, "customers.csv"), "utf8");
   const bookingCsv = await readFile(path.join(root, "appointments.csv"), "utf8");
-
-  const invoices = importRows(
-    invoiceCsv,
-    z.object({
-      invoice_number: z.string().min(1),
-      customer_name: z.string().min(1),
-      customer_email: z.string().email(),
-      amount_sgd: z.coerce.number().positive(),
-      due_date: z.string().min(8),
-      status: z.enum(["unpaid", "paid", "disputed"]),
-    }),
-  ).rows.map((row) => ({
-    id: crypto.randomUUID(),
-    businessId,
-    customerId: crypto.randomUUID(),
-    invoiceNumber: row.invoice_number,
-    customerName: row.customer_name,
-    customerEmail: row.customer_email,
-    amountSgd: row.amount_sgd,
-    dueDate: new Date(row.due_date).toISOString(),
-    status: row.status,
-    reminderCount: 0,
-    lastReminderAt: null,
-  })) satisfies Invoice[];
-
-  const customers = importRows(
-    customerCsv,
-    z.object({
-      name: z.string().min(1),
-      email: z.string().email(),
-      last_contact_at: z.string().optional(),
-      notes: z.string().optional(),
-    }),
-  ).rows.map((row) => ({
-    id: crypto.randomUUID(),
-    businessId,
-    name: row.name,
-    email: row.email,
-    lastContactAt: row.last_contact_at ? new Date(row.last_contact_at).toISOString() : null,
-    notes: row.notes ?? "",
-    followUpCount: 0,
-  })) satisfies FollowUpCustomer[];
-
-  const appointments = importRows(
-    bookingCsv,
-    z.object({
-      customer_name: z.string().min(1),
-      customer_email: z.string().email(),
-      starts_at: z.string().min(8),
-      status: z.enum(["booked", "cancelled", "completed"]).default("booked"),
-    }),
-  ).rows.map((row) => ({
-    id: crypto.randomUUID(),
-    businessId,
-    customerName: row.customer_name,
-    customerEmail: row.customer_email,
-    startsAt: new Date(row.starts_at).toISOString(),
-    status: row.status,
-    reminderCount: 0,
-  })) satisfies Appointment[];
-
-  store.invoices = invoices;
-  store.customers = customers;
-  store.appointments = appointments;
-  recordImport({ businessId, filename: "invoices.csv", kind: "invoices", rowCount: invoices.length });
-  recordImport({ businessId, filename: "customers.csv", kind: "customers", rowCount: customers.length });
-  recordImport({ businessId, filename: "appointments.csv", kind: "appointments", rowCount: appointments.length });
+  ingestCsv(businessId, invoiceCsv, "invoices.csv", "invoices");
+  ingestCsv(businessId, customerCsv, "customers.csv", "customers");
+  ingestCsv(businessId, bookingCsv, "appointments.csv", "appointments");
   setProfile({
     businessId,
     name: "Harbour Digital Studio",
@@ -244,7 +190,7 @@ export async function seedFromCsvIfEmpty() {
     agentRunId: null,
     invoiceId: null,
     action: "seed_datasets",
-    result: `invoices=${invoices.length}; customers=${customers.length}; bookings=${appointments.length}`,
+    result: `invoices=${store.invoices.length}; customers=${store.customers.length}; bookings=${store.appointments.length}`,
   });
   await saveSnapshot();
   return { seeded: true };

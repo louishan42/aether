@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
 import type { TenantRequest } from "../middleware/tenant.js";
-import { addLog, getProfile, getStore, recordImport, setProfile } from "../services/store.js";
+import { addLog, getProfile, getStore, setProfile } from "../services/store.js";
 import { saveSnapshot } from "../services/persist.js";
-import { importRows } from "../services/csv.js";
+import { ingestCsv } from "../services/ingest.js";
+import { runAllAgents } from "../../../agents/runners/run.js";
 import { GRANT_CATALOG } from "../../../agents/catalogs/grants.js";
 import { COMPLIANCE_CATALOG } from "../../../agents/catalogs/compliance.js";
 import type { Appointment, FollowUpCustomer } from "../types.js";
@@ -18,7 +19,29 @@ router.get("/records", (req, res) => {
     customers: store.customers.filter((row) => row.businessId === businessId),
     appointments: store.appointments.filter((row) => row.businessId === businessId),
     files: store.imports.filter((row) => row.businessId === businessId),
+    datasets: store.imports.filter((row) => row.businessId === businessId),
   });
+});
+
+router.post("/datasets/import", async (req, res) => {
+  const { businessId } = req as TenantRequest;
+  const csv = typeof req.body?.csv === "string" ? req.body.csv : "";
+  const filename = typeof req.body?.filename === "string" && req.body.filename.trim() ? req.body.filename.trim() : "upload.csv";
+  const kind = typeof req.body?.kind === "string" ? req.body.kind : undefined;
+  if (!csv.trim()) return res.status(400).json({ error: "Paste or drop a CSV file." });
+  try {
+    const result = ingestCsv(
+      businessId,
+      csv,
+      filename,
+      kind === "invoices" || kind === "customers" || kind === "appointments" || kind === "custom" ? kind : undefined,
+    );
+    if (result.agentReady) await runAllAgents(businessId);
+    await saveSnapshot();
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Import failed" });
+  }
 });
 
 router.get("/profile", (req, res) => {
@@ -92,29 +115,9 @@ router.post("/customers/import", async (req, res) => {
   const csv = typeof req.body?.csv === "string" ? req.body.csv : "";
   const filename = typeof req.body?.filename === "string" && req.body.filename.trim() ? req.body.filename.trim() : "customers.csv";
   if (!csv.trim()) return res.status(400).json({ error: "No CSV provided. Dataset deferred." });
-  const schema = z.object({
-    name: z.string().min(1),
-    email: z.string().email(),
-    last_contact_at: z.string().optional(),
-    notes: z.string().optional(),
-  });
-  const { rows, errors } = importRows(csv, schema);
-  const imported: FollowUpCustomer[] = rows.map((row) => {
-    const customer: FollowUpCustomer = {
-      id: crypto.randomUUID(),
-      businessId,
-      name: row.name,
-      email: row.email,
-      lastContactAt: row.last_contact_at ? new Date(row.last_contact_at).toISOString() : null,
-      notes: row.notes ?? "",
-      followUpCount: 0,
-    };
-    getStore().customers.unshift(customer);
-    return customer;
-  });
-  recordImport({ businessId, filename, kind: "customers", rowCount: imported.length });
+  const result = ingestCsv(businessId, csv, filename, "customers");
   await saveSnapshot();
-  res.json({ imported: imported.length, errors, customers: imported });
+  res.json({ imported: result.mapped, errors: [], customers: getStore().customers.filter((row) => row.businessId === businessId).slice(0, result.mapped) });
 });
 
 router.get("/compliance", (req, res) => {
@@ -204,29 +207,13 @@ router.post("/appointments/import", async (req, res) => {
   const csv = typeof req.body?.csv === "string" ? req.body.csv : "";
   const filename = typeof req.body?.filename === "string" && req.body.filename.trim() ? req.body.filename.trim() : "appointments.csv";
   if (!csv.trim()) return res.status(400).json({ error: "No CSV provided. Dataset deferred." });
-  const schema = z.object({
-    customer_name: z.string().min(1),
-    customer_email: z.string().email(),
-    starts_at: z.string().min(8),
-    status: z.enum(["booked", "cancelled", "completed"]).default("booked"),
-  });
-  const { rows, errors } = importRows(csv, schema);
-  const imported: Appointment[] = rows.map((row) => {
-    const appointment: Appointment = {
-      id: crypto.randomUUID(),
-      businessId,
-      customerName: row.customer_name,
-      customerEmail: row.customer_email,
-      startsAt: new Date(row.starts_at).toISOString(),
-      status: row.status,
-      reminderCount: 0,
-    };
-    getStore().appointments.unshift(appointment);
-    return appointment;
-  });
-  recordImport({ businessId, filename, kind: "appointments", rowCount: imported.length });
+  const result = ingestCsv(businessId, csv, filename, "appointments");
   await saveSnapshot();
-  res.json({ imported: imported.length, errors, appointments: imported });
+  res.json({
+    imported: result.mapped,
+    errors: [],
+    appointments: getStore().appointments.filter((row) => row.businessId === businessId).slice(0, result.mapped),
+  });
 });
 
 export default router;
