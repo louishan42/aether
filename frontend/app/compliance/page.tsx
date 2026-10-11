@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
-import { DatasetFilter } from "../../components/DatasetFilter";
+import { DEMO_SME_PROFILE } from "../../lib/demoProfile";
 
 type Requirement = {
   id: string;
@@ -28,34 +29,65 @@ export default function CompliancePage() {
 
   const gaps = requirements.filter((item) => item.applies && item.evidenceStatus === "missing");
 
+  async function useDemoProfile() {
+    setBusy(true);
+    try {
+      await api.saveProfile(DEMO_SME_PROFILE);
+      await load();
+      setMessage("Demo SME profile saved. Gaps below follow that profile.");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Could not save profile.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Records"
         title="Compliance"
         action={
-          <button
-            className="btn-primary"
-            disabled={busy || !gaps.length}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                const result = await api.analyze("compliance");
-                const count = Array.isArray(result?.drafts) ? result.drafts.length : gaps.length;
-                setMessage(`${count} in Approvals.`);
-                await load();
-              } catch (err) {
-                setMessage(err instanceof Error ? err.message : "Could not review compliance gaps.");
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            {busy ? "Reviewing…" : "Review gaps"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn-ghost" disabled={busy} onClick={() => void useDemoProfile()}>
+              Use demo SME profile
+            </button>
+            <button
+              className="btn-primary"
+              disabled={busy || !gaps.length}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  const result = await api.analyze("compliance");
+                  const count = Array.isArray(result?.drafts) ? result.drafts.length : gaps.length;
+                  setMessage(`${count} gap review(s) in Approvals.`);
+                  await load();
+                } catch (err) {
+                  setMessage(err instanceof Error ? err.message : "Could not review compliance gaps.");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Reviewing…" : "Review gaps"}
+            </button>
+          </div>
         }
       />
-      <DatasetFilter />
+
+      <section className="panel p-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">How compliance works</p>
+        <p className="mt-2 text-sm">
+          Not a CSV. Items apply from Settings (staff count, GST, revenue). Mark submitted / waived / missing as evidence. Review gaps puts open items in Approvals. Screening only — not legal advice, not a PDPA certificate.
+        </p>
+        <p className="mt-2 text-sm">
+          Catalog: <code className="text-xs">agents/catalogs/compliance.ts</code>
+        </p>
+        <Link href="/settings" className="btn-ghost mt-3">
+          Open Settings
+        </Link>
+      </section>
+
       {message && <p className="text-sm">{message}</p>}
       <p className="text-sm text-muted">{gaps.length} open</p>
       <div className="space-y-3">
@@ -76,6 +108,7 @@ export default function CompliancePage() {
                     try {
                       await api.markEvidence(item.id, status);
                       await load();
+                      setMessage(`${item.title}: ${status}.`);
                     } catch (err) {
                       setMessage(err instanceof Error ? err.message : "Could not save evidence.");
                     }

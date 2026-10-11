@@ -40,7 +40,7 @@ export default function ApprovalsPage() {
         (draft.customer as { sourceImportId?: string } | undefined)?.sourceImportId ??
         (draft.appointment as { sourceImportId?: string } | undefined)?.sourceImportId ??
         null;
-      if (view !== "all" && (draft.agent === "grant" || draft.agent === "compliance")) return false;
+      if (draft.agent === "grant" || draft.agent === "compliance") return true;
       if (view === "all") return true;
       return rowsForView([{ sourceImportId: sid }], view).length > 0;
     });

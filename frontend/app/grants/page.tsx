@@ -5,7 +5,7 @@ import Link from "next/link";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
-import { DatasetFilter } from "../../components/DatasetFilter";
+import { DEMO_SME_PROFILE } from "../../lib/demoProfile";
 
 type Grant = {
   id: string;
@@ -33,42 +33,68 @@ export default function GrantsPage() {
   const fits = grants.filter((grant) => grant.match.ok);
   const rest = grants.filter((grant) => !grant.match.ok);
 
+  async function useDemoProfile() {
+    setBusy(true);
+    try {
+      await api.saveProfile(DEMO_SME_PROFILE);
+      await load();
+      setMessage("Demo SME profile saved. Fits should show below.");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Could not save profile.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Records"
         title="Grants"
         action={
-          <button
-            className="btn-primary w-full sm:w-auto"
-            disabled={busy || !fits.length}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                const result = await api.analyze("grant");
-                const count = Array.isArray(result?.drafts) ? result.drafts.length : fits.length;
-                setMessage(`${count} in Approvals.`);
-                await load();
-              } catch (err) {
-                setMessage(err instanceof Error ? err.message : "Could not prepare grant checklists.");
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            {busy ? "Preparing…" : "Prepare checklists"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn-ghost" disabled={busy} onClick={() => void useDemoProfile()}>
+              Use demo SME profile
+            </button>
+            <button
+              className="btn-primary w-full sm:w-auto"
+              disabled={busy || !fits.length}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  const result = await api.analyze("grant");
+                  const count = Array.isArray(result?.drafts) ? result.drafts.length : fits.length;
+                  setMessage(`${count} grant checklist(s) in Approvals.`);
+                  await load();
+                } catch (err) {
+                  setMessage(err instanceof Error ? err.message : "Could not prepare grant checklists.");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Preparing…" : "Prepare checklists"}
+            </button>
+          </div>
         }
       />
-      <DatasetFilter />
-      <p className="text-sm text-muted">Grants use industry in Settings, not a CSV.</p>
+
+      <section className="panel p-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">How grants work</p>
+        <p className="mt-2 text-sm">
+          Not a CSV. Matching uses the business profile in Settings (industry, headcount, digital tools, exporting). Screening only — not a funding decision. Click Prepare checklists, then approve on Approvals.
+        </p>
+        <p className="mt-2 text-sm">
+          Catalog: <code className="text-xs">agents/catalogs/grants.ts</code>
+        </p>
+        <Link href="/settings" className="btn-ghost mt-3">
+          Open Settings
+        </Link>
+      </section>
+
       {!profileReady && (
         <p className="panel p-4 text-sm">
-          Set industry in{" "}
-          <Link href="/settings" className="accent-text font-semibold hover:underline">
-            Settings
-          </Link>
-          .
+          No fits yet. Click Use demo SME profile, or set industry in Settings.
         </p>
       )}
       {message && <p className="text-sm">{message}</p>}

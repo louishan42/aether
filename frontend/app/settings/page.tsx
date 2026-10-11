@@ -5,6 +5,7 @@ import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { DatasetFilter } from "../../components/DatasetFilter";
 import type { BusinessProfile, Stats } from "../../lib/types";
+import { DEMO_SME_PROFILE } from "../../lib/demoProfile";
 
 const emptyPolicy: Stats["policy"] = {
   minimumOverdueDays: 1,
@@ -100,16 +101,28 @@ export default function SettingsPage() {
             GST registered
           </label>
         </div>
-        <button
-          className="btn-ink"
-          onClick={async () => {
-            const result = await api.saveProfile(profile);
-            setProfile(result.profile);
-            setMessage("Profile saved.");
-          }}
-        >
-          Save profile
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            className="btn-ghost"
+            onClick={async () => {
+              const result = await api.saveProfile(DEMO_SME_PROFILE);
+              setProfile(result.profile);
+              setMessage("Demo SME profile saved. Open Grants and Compliance.");
+            }}
+          >
+            Use demo SME profile
+          </button>
+          <button
+            className="btn-ink"
+            onClick={async () => {
+              const result = await api.saveProfile(profile);
+              setProfile(result.profile);
+              setMessage("Profile saved.");
+            }}
+          >
+            Save profile
+          </button>
+        </div>
       </section>
 
       <section className="space-y-4">
