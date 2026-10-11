@@ -5,6 +5,11 @@ import { GRANT_CATALOG } from "../catalogs/grants.js";
 import { COMPLIANCE_CATALOG } from "../catalogs/compliance.js";
 import type { AgentKind, AgentRun } from "../../backend/src/types.js";
 
+function dropPending(agent: AgentKind) {
+  const store = getStore();
+  store.drafts = store.drafts.filter((draft) => !(draft.agent === agent && draft.status === "pending"));
+}
+
 function startRun(businessId: string, agent: AgentKind): AgentRun {
   const run: AgentRun = {
     id: crypto.randomUUID(),
@@ -31,6 +36,7 @@ function finishRun(run: AgentRun, result: string) {
 }
 
 export async function runInvoiceAgent(businessId: string) {
+  dropPending("invoice");
   const store = getStore();
   const run = startRun(businessId, "invoice");
   const tools = createTools(businessId);
@@ -63,6 +69,7 @@ export async function runAgent(businessId: string) {
 }
 
 export async function runGrantAgent(businessId: string) {
+  dropPending("grant");
   const store = getStore();
   const run = startRun(businessId, "grant");
   const profile = getProfile(businessId);
@@ -89,6 +96,7 @@ export async function runGrantAgent(businessId: string) {
 }
 
 export async function runCustomerAgent(businessId: string) {
+  dropPending("customer");
   const store = getStore();
   const run = startRun(businessId, "customer");
   const policy = getPolicy(businessId);
@@ -121,6 +129,7 @@ export async function runCustomerAgent(businessId: string) {
 }
 
 export async function runComplianceAgent(businessId: string) {
+  dropPending("compliance");
   const store = getStore();
   const run = startRun(businessId, "compliance");
   const profile = getProfile(businessId);
@@ -151,6 +160,7 @@ export async function runComplianceAgent(businessId: string) {
 }
 
 export async function runAppointmentAgent(businessId: string) {
+  dropPending("appointment");
   const store = getStore();
   const run = startRun(businessId, "appointment");
   const policy = getPolicy(businessId);

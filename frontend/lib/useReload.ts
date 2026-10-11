@@ -19,9 +19,11 @@ export function useReload(load: () => Promise<void>, onError: (message: string) 
     };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisible);
+    const tick = window.setInterval(run, 4000);
     return () => {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(tick);
     };
   }, []);
 }

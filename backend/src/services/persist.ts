@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { prisma } from "./db.js";
 import { addLog, getStore, setPolicy, setProfile } from "./store.js";
-import { ingestCsv, rematerializeFromFiles } from "./ingest.js";
+import { ingestCsv, pruneOrphanDrafts, reconcileToDatasets, rematerializeFromFiles } from "./ingest.js";
 import type { AgentDraft, Appointment, Invoice } from "../types.js";
 
 const DEMO_BUSINESS_ID = process.env.DEMO_BUSINESS_ID ?? "demo-business";
@@ -82,7 +82,10 @@ export async function loadSnapshot() {
   }));
   for (const profile of profiles) store.profiles[profile.businessId] = profile;
   for (const policy of policies) store.policies[policy.businessId] = policy;
-  if (rematerializeFromFiles()) await saveSnapshot();
+  const rebuilt = rematerializeFromFiles();
+  const reconciled = reconcileToDatasets();
+  const pruned = pruneOrphanDrafts();
+  if (rebuilt || reconciled || pruned) await saveSnapshot();
 }
 
 export async function saveSnapshot() {
@@ -173,7 +176,9 @@ export async function saveSnapshot() {
 
 export async function seedFromCsvIfEmpty() {
   const store = getStore();
-  if (store.invoices.length || store.customers.length || store.appointments.length) return { seeded: false };
+  if (store.invoices.length || store.customers.length || store.appointments.length || store.imports.length || store.logs.length) {
+    return { seeded: false };
+  }
 
   const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../../datasets");
   const businessId = DEMO_BUSINESS_ID;

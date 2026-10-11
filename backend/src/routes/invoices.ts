@@ -9,7 +9,7 @@ import type { Invoice, InvoiceStatus } from "../types.js";
 
 const router = Router();
 
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   const { businessId } = req as TenantRequest;
   const schema = z.object({
     invoiceNumber: z.string().min(1),
@@ -34,9 +34,10 @@ router.post("/", (req, res) => {
     status: data.status as InvoiceStatus,
     reminderCount: 0,
     lastReminderAt: null,
-    sourceImportId: null,
+    sourceImportId: "manual",
   };
   getStore().invoices.unshift(invoice);
+  await saveSnapshot();
   res.json({ invoice });
 });
 

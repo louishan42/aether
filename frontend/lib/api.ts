@@ -114,7 +114,11 @@ export const api = {
       body: JSON.stringify({ message }),
     }),
   deleteDataset: (id: string) =>
-    request<{ filename: string; removed: { invoices: number; customers: number; appointments: number } }>(
+    request<{
+      filename: string;
+      removed: { invoices: number; customers: number; appointments: number };
+      refreshed: { invoices: number; customers: number; appointments: number; pendingApprovals: number };
+    }>(
       `/api/workspace/datasets/${id}`,
       { method: "DELETE" },
     ),

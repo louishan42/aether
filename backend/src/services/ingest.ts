@@ -215,50 +215,81 @@ export function rematerializeFromFiles() {
   return added;
 }
 
+export function reconcileToDatasets() {
+  const store = getStore();
+  const kinds = new Set(store.imports.map((row) => row.kind));
+  let changed = 0;
+  if (!kinds.has("invoices")) {
+    const before = store.invoices.length;
+    store.invoices = store.invoices.filter((row) => row.sourceImportId === "manual");
+    changed += before - store.invoices.length;
+  }
+  if (!kinds.has("customers")) {
+    const before = store.customers.length;
+    store.customers = store.customers.filter((row) => row.sourceImportId === "manual");
+    changed += before - store.customers.length;
+  }
+  if (!kinds.has("appointments")) {
+    const before = store.appointments.length;
+    store.appointments = store.appointments.filter((row) => row.sourceImportId === "manual");
+    changed += before - store.appointments.length;
+  }
+  return changed;
+}
+
+export function pruneOrphanDrafts() {
+  const store = getStore();
+  const invoiceIds = new Set(store.invoices.map((row) => row.id));
+  const customerIds = new Set(store.customers.map((row) => row.id));
+  const appointmentIds = new Set(store.appointments.map((row) => row.id));
+  const before = store.drafts.length;
+  store.drafts = store.drafts.filter((draft) => {
+    if (draft.agent === "invoice") return invoiceIds.has(draft.recordId) || invoiceIds.has(draft.invoiceId);
+    if (draft.agent === "customer") return customerIds.has(draft.recordId);
+    if (draft.agent === "appointment") return appointmentIds.has(draft.recordId);
+    return true;
+  });
+  return before - store.drafts.length;
+}
+
+export function deskCounts(businessId: string) {
+  const store = getStore();
+  return {
+    invoices: store.invoices.filter((row) => row.businessId === businessId).length,
+    customers: store.customers.filter((row) => row.businessId === businessId).length,
+    appointments: store.appointments.filter((row) => row.businessId === businessId).length,
+    pendingApprovals: store.drafts.filter((draft) => draft.status === "pending" || draft.status === "approved").length,
+  };
+}
+
+function dropKindRecords(businessId: string, kind: DetectedKind) {
+  const store = getStore();
+  const removed = { invoices: 0, customers: 0, appointments: 0 };
+  if (kind === "invoices") {
+    const ids = new Set(store.invoices.filter((row) => row.businessId === businessId).map((row) => row.id));
+    removed.invoices = ids.size;
+    store.invoices = store.invoices.filter((row) => row.businessId !== businessId);
+    store.drafts = store.drafts.filter((draft) => draft.agent !== "invoice" && !ids.has(draft.recordId) && !ids.has(draft.invoiceId));
+  } else if (kind === "customers") {
+    const ids = new Set(store.customers.filter((row) => row.businessId === businessId).map((row) => row.id));
+    removed.customers = ids.size;
+    store.customers = store.customers.filter((row) => row.businessId !== businessId);
+    store.drafts = store.drafts.filter((draft) => draft.agent !== "customer" && !ids.has(draft.recordId));
+  } else if (kind === "appointments") {
+    const ids = new Set(store.appointments.filter((row) => row.businessId === businessId).map((row) => row.id));
+    removed.appointments = ids.size;
+    store.appointments = store.appointments.filter((row) => row.businessId !== businessId);
+    store.drafts = store.drafts.filter((draft) => draft.agent !== "appointment" && !ids.has(draft.recordId));
+  }
+  return removed;
+}
+
 export function deleteImportedDataset(businessId: string, importId: string) {
   const store = getStore();
   const file = store.imports.find((row) => row.id === importId && row.businessId === businessId);
   if (!file) throw new Error("Dataset not found.");
-
-  const invoiceIds = new Set(
-    store.invoices.filter((row) => row.businessId === businessId && row.sourceImportId === importId).map((row) => row.id),
-  );
-  const customerIds = new Set(
-    store.customers.filter((row) => row.businessId === businessId && row.sourceImportId === importId).map((row) => row.id),
-  );
-  const appointmentIds = new Set(
-    store.appointments.filter((row) => row.businessId === businessId && row.sourceImportId === importId).map((row) => row.id),
-  );
-
-  if (!invoiceIds.size && file.kind === "invoices") {
-    const numbers = new Set(file.rows.map((row) => row.invoice_number || row.invoice || row.id).filter(Boolean));
-    store.invoices
-      .filter((row) => row.businessId === businessId && numbers.has(row.invoiceNumber))
-      .forEach((row) => invoiceIds.add(row.id));
-  }
-  if (!customerIds.size && file.kind === "customers") {
-    const emails = new Set(file.rows.map((row) => (row.email || row.customer_email || "").toLowerCase()).filter(Boolean));
-    store.customers
-      .filter((row) => row.businessId === businessId && emails.has(row.email.toLowerCase()))
-      .forEach((row) => customerIds.add(row.id));
-  }
-  if (!appointmentIds.size && file.kind === "appointments") {
-    const keys = new Set(file.rows.map((row) => `${row.customer_email || row.email}|${row.starts_at || row.start || ""}`));
-    store.appointments
-      .filter((row) => row.businessId === businessId && keys.has(`${row.customerEmail}|${row.startsAt}`))
-      .forEach((row) => appointmentIds.add(row.id));
-  }
-
-  const recordIds = new Set([...invoiceIds, ...customerIds, ...appointmentIds]);
-  store.invoices = store.invoices.filter((row) => !invoiceIds.has(row.id));
-  store.customers = store.customers.filter((row) => !customerIds.has(row.id));
-  store.appointments = store.appointments.filter((row) => !appointmentIds.has(row.id));
-  store.drafts = store.drafts.filter((draft) => !recordIds.has(draft.recordId) && !recordIds.has(draft.invoiceId));
+  const removed = dropKindRecords(businessId, file.kind);
   store.imports = store.imports.filter((row) => row.id !== importId);
-
-  return {
-    filename: file.filename,
-    kind: file.kind,
-    removed: { invoices: invoiceIds.size, customers: customerIds.size, appointments: appointmentIds.size },
-  };
+  pruneOrphanDrafts();
+  return { filename: file.filename, kind: file.kind, removed, refreshed: deskCounts(businessId) };
 }
