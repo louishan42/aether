@@ -110,7 +110,6 @@ export const api = {
       kind: string;
       mapped: number;
       stored: number;
-      mapped: number;
       agentReady: boolean;
       agent: string | null;
       reason?: string;
