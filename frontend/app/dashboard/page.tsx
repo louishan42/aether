@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import type { Stats } from "../../lib/types";
+import { useReload } from "../../lib/useReload";
 
 const hrefs: Record<string, string> = {
   invoice: "/invoices",
@@ -41,8 +42,9 @@ export default function DashboardPage() {
     }
   }
 
+  useReload(load, setError);
+
   useEffect(() => {
-    load();
     const tick = () =>
       setClock(
         new Intl.DateTimeFormat("en-SG", {

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
+import { useReload } from "../../lib/useReload";
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<{ id: string; customerName: string; customerEmail: string; startsAt: string; status: string }[]>([]);
@@ -14,9 +15,7 @@ export default function AppointmentsPage() {
     setAppointments((await api.appointments()).appointments);
   }
 
-  useEffect(() => {
-    load().catch((err) => setMessage(err.message));
-  }, []);
+  useReload(load, setMessage);
 
   return (
     <div className="space-y-6">

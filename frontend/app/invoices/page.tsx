@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import type { Invoice } from "../../lib/types";
+import { useReload } from "../../lib/useReload";
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -25,9 +26,7 @@ export default function InvoicesPage() {
     setOverdue(due.invoices);
   }
 
-  useEffect(() => {
-    load().catch((err) => setMessage(err.message));
-  }, []);
+  useReload(load, setMessage);
 
   return (
     <div className="space-y-6">

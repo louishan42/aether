@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
+import { useReload } from "../../lib/useReload";
 
 type FileRow = {
   id: string;
@@ -27,9 +28,7 @@ export default function DatasetsPage() {
     setFiles(data.datasets?.length ? data.datasets : data.files);
   }
 
-  useEffect(() => {
-    load().catch((err) => setMessage(err.message));
-  }, []);
+  useReload(load, setMessage);
 
   async function importOne(csv: string, filename: string, chosenKind?: string) {
     const result = await api.importAny(csv, filename, chosenKind === "auto" ? undefined : chosenKind);
@@ -57,7 +56,7 @@ export default function DatasetsPage() {
         const csv = await file.text();
         const result = await importOne(csv, file.name, kind);
         notes.push(
-          `${file.name}: saved as ${result.kind} (${result.stored} rows${result.agentReady ? ", agents ran" : ", stored only"})`,
+          `${file.name}: ${result.kind} (${result.stored} rows) · invoices ${result.refreshed?.invoices ?? 0}, customers ${result.refreshed?.customers ?? 0}, bookings ${result.refreshed?.appointments ?? 0}${result.agentReady ? " · agents ran" : ""}`,
         );
       }
       await load();
@@ -74,7 +73,7 @@ export default function DatasetsPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Datasets"
-        description="Add any spreadsheet (CSV/TSV). Invoice, customer, and booking files feed the agents. Everything else is stored as its own table so you can check it."
+        description="Drop a CSV and Invoices, Customers, and Bookings refresh from that file. A new invoice, customer, or booking sheet replaces the previous one of that type."
       />
       {message && <p className="text-sm text-red-800">{message}</p>}
 
@@ -139,7 +138,9 @@ export default function DatasetsPage() {
               const result = await importOne(paste, "pasted.csv", kind);
               setPaste("");
               await load();
-              setMessage(`Pasted file saved as ${result.kind} (${result.stored} rows).`);
+              setMessage(
+                `Pasted as ${result.kind} (${result.stored} rows) · invoices ${result.refreshed?.invoices ?? 0}, customers ${result.refreshed?.customers ?? 0}, bookings ${result.refreshed?.appointments ?? 0}.`,
+              );
             } catch (err) {
               setMessage(err instanceof Error ? err.message : "Import failed");
             } finally {

@@ -96,7 +96,14 @@ export const api = {
       }[];
     }>("/api/workspace/records"),
   importAny: (csv: string, filename?: string, kind?: string) =>
-    request<{ kind: string; mapped: number; stored: number; agentReady: boolean; file: { filename: string } }>(
+    request<{
+      kind: string;
+      mapped: number;
+      stored: number;
+      agentReady: boolean;
+      file: { filename: string };
+      refreshed: { invoices: number; customers: number; appointments: number };
+    }>(
       "/api/workspace/datasets/import",
       { method: "POST", body: JSON.stringify({ csv, filename, kind }) },
       true,

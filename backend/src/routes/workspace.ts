@@ -56,7 +56,14 @@ router.post("/datasets/import", async (req, res) => {
     );
     if (result.agentReady) await runAllAgents(businessId);
     await saveSnapshot();
-    res.json(result);
+    res.json({
+      ...result,
+      refreshed: {
+        invoices: getStore().invoices.filter((row) => row.businessId === businessId).length,
+        customers: getStore().customers.filter((row) => row.businessId === businessId).length,
+        appointments: getStore().appointments.filter((row) => row.businessId === businessId).length,
+      },
+    });
   } catch (error) {
     res.status(400).json({ error: error instanceof Error ? error.message : "Import failed" });
   }

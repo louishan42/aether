@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import type { AgentId, Draft } from "../../lib/types";
+import { useReload } from "../../lib/useReload";
 
 const filters: (AgentId | "all")[] = ["all", "invoice", "grant", "customer", "compliance", "appointment"];
 
@@ -27,9 +28,7 @@ export default function ApprovalsPage() {
     setMessage(data.drafts.length ? "" : "No drafts yet. Load CSVs on Datasets, then refresh this page.");
   }
 
-  useEffect(() => {
-    load().catch((err) => setMessage(err.message));
-  }, []);
+  useReload(load, setMessage);
 
   const visible = useMemo(
     () => (filter === "all" ? drafts : drafts.filter((draft) => draft.agent === filter)),

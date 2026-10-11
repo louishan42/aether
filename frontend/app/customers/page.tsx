@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
+import { useReload } from "../../lib/useReload";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<{ id: string; name: string; email: string; lastContactAt: string | null; notes: string }[]>([]);
@@ -14,9 +15,7 @@ export default function CustomersPage() {
     setCustomers((await api.customers()).customers);
   }
 
-  useEffect(() => {
-    load().catch((err) => setMessage(err.message));
-  }, []);
+  useReload(load, setMessage);
 
   return (
     <div className="space-y-6">

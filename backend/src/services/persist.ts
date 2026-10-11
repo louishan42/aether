@@ -3,10 +3,23 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { prisma } from "./db.js";
 import { addLog, getStore, setPolicy, setProfile } from "./store.js";
-import { ingestCsv } from "./ingest.js";
+import { ingestCsv, rematerializeFromFiles } from "./ingest.js";
 import type { AgentDraft, Appointment, Invoice } from "../types.js";
 
 const DEMO_BUSINESS_ID = process.env.DEMO_BUSINESS_ID ?? "demo-business";
+
+function jsonArray<T>(value: unknown, fallback: T[]): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? (parsed as T[]) : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
 
 function asDate(value: string | Date | null | undefined) {
   if (!value) return null;
@@ -64,11 +77,12 @@ export async function loadSnapshot() {
     kind: row.kind as (typeof store.imports)[number]["kind"],
     rowCount: row.rowCount,
     importedAt: row.importedAt.toISOString(),
-    headers: Array.isArray(row.headers) ? (row.headers as string[]) : [],
-    rows: Array.isArray(row.rows) ? (row.rows as Record<string, string>[]) : [],
+    headers: jsonArray<string>(row.headers, []),
+    rows: jsonArray<Record<string, string>>(row.rows, []),
   }));
   for (const profile of profiles) store.profiles[profile.businessId] = profile;
   for (const policy of policies) store.policies[policy.businessId] = policy;
+  if (rematerializeFromFiles()) await saveSnapshot();
 }
 
 export async function saveSnapshot() {
