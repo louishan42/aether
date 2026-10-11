@@ -1,9 +1,17 @@
 const headers = { "Content-Type": "application/json" };
+const apiOrigin = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
+
+function apiUrl(path: string) {
+  return `${apiOrigin}${path}`;
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, { ...init, headers: { ...headers, ...init?.headers }, cache: "no-store" });
+  const res = await fetch(apiUrl(path), { ...init, headers: { ...headers, ...init?.headers }, cache: "no-store" });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+    if (res.status === 413) {
+      throw new Error(body.error ?? "File is too large. Use a CSV under 25 MB, or split it.");
+    }
     throw new Error(body.error ?? `Request failed: ${res.status}`);
   }
   return res.json();

@@ -30,7 +30,14 @@ app.use(
     },
   }),
 );
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "32mb" }));
+app.use((err: { status?: number; type?: string }, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err.status === 413 || err.type === "entity.too.large") {
+    res.status(413).json({ error: "This file is too large for one upload. Use a CSV under 25 MB, or split it." });
+    return;
+  }
+  next(err);
+});
 app.use(tenantContext);
 
 app.get("/", (_req, res) => {
