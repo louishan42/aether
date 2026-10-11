@@ -77,46 +77,51 @@ export default function CompliancePage() {
       />
 
       {message && <p className="text-sm">{message}</p>}
-      {requirements.length > 0 && (
-        <div className="space-y-3">
-          {requirements.map((item) => (
-            <article key={item.id} className="panel p-5">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-muted">{item.framework}</p>
-              <h2 className="mt-1 font-medium tracking-tight">{item.title}</h2>
-              <p className="mt-2 text-sm">{item.summary}</p>
-              <p className="mt-2 text-sm text-muted">
-                {item.applies ? "Applies" : "Not flagged"} · evidence: {item.evidenceStatus.replace("_", " ")}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {(["submitted", "waived", "missing"] as const).map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    disabled={busy === item.id}
-                    className={item.evidenceStatus === status ? "chip-on min-h-11 px-3 py-2 text-sm" : "btn-ghost text-xs"}
-                    onClick={async () => {
-                      setBusy(item.id);
-                      setRequirements((current) =>
-                        current.map((row) => (row.id === item.id ? { ...row, evidenceStatus: status } : row)),
-                      );
-                      try {
-                        await api.markEvidence(item.id, status);
-                        await load();
-                      } catch (err) {
-                        await load().catch(() => undefined);
-                        setMessage(err instanceof Error ? err.message : "Could not save evidence.");
-                      } finally {
-                        setBusy(null);
-                      }
-                    }}
-                  >
-                    Mark {status}
-                  </button>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
+      {requirements.length === 0 ? (
+        <p className="text-sm text-muted">None yet.</p>
+      ) : (
+        <>
+          <p className="text-sm text-muted">{gaps.length} open</p>
+          <div className="space-y-3">
+            {requirements.map((item) => (
+              <article key={item.id} className="panel p-5">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-muted">{item.framework}</p>
+                <h2 className="mt-1 font-medium tracking-tight">{item.title}</h2>
+                <p className="mt-2 text-sm">{item.summary}</p>
+                <p className="mt-2 text-sm text-muted">
+                  {item.applies ? "Applies" : "Not flagged"} · evidence: {item.evidenceStatus.replace("_", " ")}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(["submitted", "waived", "missing"] as const).map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      disabled={busy === item.id}
+                      className={item.evidenceStatus === status ? "chip-on min-h-11 px-3 py-2 text-sm" : "btn-ghost text-xs"}
+                      onClick={async () => {
+                        setBusy(item.id);
+                        setRequirements((current) =>
+                          current.map((row) => (row.id === item.id ? { ...row, evidenceStatus: status } : row)),
+                        );
+                        try {
+                          await api.markEvidence(item.id, status);
+                          await load();
+                        } catch (err) {
+                          await load().catch(() => undefined);
+                          setMessage(err instanceof Error ? err.message : "Could not save evidence.");
+                        } finally {
+                          setBusy(null);
+                        }
+                      }}
+                    >
+                      Mark {status}
+                    </button>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
