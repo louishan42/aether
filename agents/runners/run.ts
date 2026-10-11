@@ -195,11 +195,9 @@ export async function runAppointmentAgent(businessId: string) {
 
 export async function runAllAgents(businessId: string) {
   const invoice = await runInvoiceAgent(businessId);
-  const grant = await runGrantAgent(businessId);
   const customer = await runCustomerAgent(businessId);
-  const compliance = await runComplianceAgent(businessId);
   const appointment = await runAppointmentAgent(businessId);
-  return { invoice, grant, customer, compliance, appointment };
+  return { invoice, customer, appointment };
 }
 
 export async function runAgentsForKind(businessId: string, kind: string) {

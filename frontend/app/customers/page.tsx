@@ -5,15 +5,26 @@ import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
+import { DatasetFilter } from "../../components/DatasetFilter";
+import { TablePager } from "../../components/TablePager";
+import { listedDatasets, pageRows, rowsForView, type DatasetFile, type FileView } from "../../lib/datasets";
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<{ id: string; name: string; email: string; lastContactAt: string | null; notes: string }[]>([]);
+  const [customers, setCustomers] = useState<{ id: string; name: string; email: string; lastContactAt: string | null; notes: string; sourceImportId?: string | null }[]>([]);
+  const [files, setFiles] = useState<DatasetFile[]>([]);
+  const [fileId, setFileId] = useState<FileView>("all");
+  const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({ name: "", email: "", lastContactAt: "", notes: "" });
 
   async function load() {
-    setCustomers((await api.customers()).customers);
+    const [all, records] = await Promise.all([api.customers(), api.records()]);
+    setCustomers(all.customers);
+    setFiles(listedDatasets(records).filter((file) => file.kind === "customers"));
   }
+
+  const visible = rowsForView(customers, fileId);
+  const paged = pageRows(visible, page);
 
   useReload(load, setMessage);
 
@@ -22,11 +33,11 @@ export default function CustomersPage() {
       <PageHeader
         eyebrow="Records"
         title="Customers"
-        description="People who may need a check-in. Messages stay in Approvals until you send them."
+        description="All loaded customer files combined. Follow-up messages stay in Approvals until you send them."
         action={
           <button
             className="btn-primary"
-            disabled={!customers.length}
+            disabled={!visible.length}
             onClick={async () => {
               await api.analyze("customer");
               setMessage("Drafts are waiting in Approvals.");
@@ -68,6 +79,17 @@ export default function CustomersPage() {
         </Link>
         .
       </p>
+      <DatasetFilter
+        files={files}
+        value={fileId}
+        onChange={(next) => {
+          setFileId(next);
+          setPage(1);
+        }}
+        hasManual={customers.some((row) => row.sourceImportId === "manual")}
+        rowTotal={visible.length}
+      />
+
       <section className="panel table-wrap">
         <table className="w-full min-w-[28rem] text-left text-sm">
           <thead className="bg-paper text-muted">
@@ -78,14 +100,14 @@ export default function CustomersPage() {
             </tr>
           </thead>
           <tbody>
-            {customers.length === 0 && (
+            {visible.length === 0 && (
               <tr>
                 <td className="px-4 py-6 text-muted" colSpan={3}>
                   No customers yet.
                 </td>
               </tr>
             )}
-            {customers.map((row) => (
+            {paged.map((row) => (
               <tr key={row.id} className="border-t border-edge">
                 <td className="px-4 py-3">
                   {row.name}
@@ -97,6 +119,7 @@ export default function CustomersPage() {
             ))}
           </tbody>
         </table>
+        <TablePager total={visible.length} page={page} onPage={setPage} />
       </section>
     </div>
   );

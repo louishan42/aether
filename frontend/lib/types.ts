@@ -10,6 +10,7 @@ export type Invoice = {
   status: "unpaid" | "paid" | "disputed";
   reminderCount: number;
   reason?: string;
+  sourceImportId?: string | null;
 };
 
 export type Draft = {
@@ -52,12 +53,20 @@ export type Stats = {
     overdue: number;
     overdueAmount: number;
     pendingApprovals: number;
+    pendingChecklists?: number;
     sent: number;
     customers: number;
     appointments: number;
     grantMatches: number;
     complianceGaps: number;
+    files?: number;
+    fileRows?: number;
+    invoiceFiles?: number;
+    customerFiles?: number;
+    appointmentFiles?: number;
+    customFiles?: number;
   };
+  datasets?: { id: string; filename: string; kind: string; rowCount: number; importedAt: string }[];
   agents: AgentCard[];
   recentActivity: { id: string; action: string; result: string; timestamp: string; agent?: string }[];
   policy: {

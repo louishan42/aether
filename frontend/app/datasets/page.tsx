@@ -22,6 +22,10 @@ export default function DatasetsPage() {
   const [files, setFiles] = useState<FileRow[]>([]);
   const [paste, setPaste] = useState("");
   const [kind, setKind] = useState("auto");
+  const [query, setQuery] = useState("");
+  const [kindFilter, setKindFilter] = useState("all");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [shown, setShown] = useState(8);
 
   async function load() {
     const data = await api.records();
@@ -29,6 +33,14 @@ export default function DatasetsPage() {
   }
 
   useReload(load, setMessage);
+
+  const filteredAll = files
+    .filter((file) => kindFilter === "all" || file.kind === kindFilter)
+    .filter((file) => !query.trim() || file.filename.toLowerCase().includes(query.trim().toLowerCase()))
+    .slice()
+    .sort((a, b) => new Date(b.importedAt).getTime() - new Date(a.importedAt).getTime());
+  const filteredCount = filteredAll.length;
+  const filteredFiles = filteredAll.slice(0, shown);
 
   async function importOne(csv: string, filename: string, chosenKind?: string) {
     const result = await api.importAny(csv, filename, chosenKind === "auto" ? undefined : chosenKind);
@@ -73,7 +85,7 @@ export default function DatasetsPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Datasets"
-        description="Drop any CSV. If it is invoices, customers, or bookings, that page and that agent update. If the columns do not match, it stays here as a review file and no agent runs."
+        description="Drop as many CSVs as you need. Same-kind files are combined by default. On Invoices, Customers, and Bookings you can Combined, search, pick one file, or pick several. Re-uploading the same filename replaces that file only. Unmatched columns stay here and no agent runs."
       />
       {message && <p className="text-sm text-red-800">{message}</p>}
 
@@ -167,20 +179,41 @@ export default function DatasetsPage() {
 
       {files.length === 0 && <p className="text-sm text-muted">No datasets yet. Drop a file above.</p>}
 
-      {files.map((file) => {
+      {files.length > 0 && (
+        <section className="panel space-y-3 p-4">
+          <input className="field" placeholder={`Search ${files.length} files`} value={query} onChange={(event) => setQuery(event.target.value)} />
+          <div className="flex flex-wrap gap-2">
+            {[
+              ["all", "All"],
+              ["invoices", "Invoices"],
+              ["customers", "Customers"],
+              ["appointments", "Bookings"],
+              ["custom", "Custom"],
+            ].map(([id, label]) => (
+              <button key={id} type="button" className={kindFilter === id ? "chip-on min-h-11 px-3 py-2 text-sm" : "btn-ghost text-sm"} onClick={() => setKindFilter(id)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {filteredFiles.map((file) => {
         const headers = file.headers?.length ? file.headers : Object.keys(file.rows?.[0] ?? {});
+        const open = files.length <= 4 || openId === file.id;
         return (
           <section key={file.id} className="panel overflow-x-auto p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
+              <button type="button" className="text-left" onClick={() => setOpenId(open ? null : file.id)}>
                 <h2 className="font-medium tracking-tight">{file.filename}</h2>
                 <p className="mt-1 text-sm text-muted">
                   {file.kind} · {file.rowCount} rows · {new Date(file.importedAt).toLocaleString()}
                   {file.kind === "custom"
                     ? " · review file · no agent (columns did not match invoices, customers, or bookings)"
                     : ` · ${file.kind} agent`}
+                  {files.length > 4 ? (open ? " · hide preview" : " · show preview") : ""}
                 </p>
-              </div>
+              </button>
               <button
                 className="btn-ghost"
                 disabled={busy}
@@ -203,6 +236,7 @@ export default function DatasetsPage() {
                 Delete
               </button>
             </div>
+            {open && (
             <table className="mt-3 w-full min-w-[20rem] text-left text-sm">
               <thead>
                 <tr className="text-[11px] uppercase tracking-[0.14em] text-muted">
@@ -221,7 +255,7 @@ export default function DatasetsPage() {
                     </td>
                   </tr>
                 )}
-                {(file.rows ?? []).slice(0, 50).map((row, index) => (
+                {(file.rows ?? []).slice(0, 20).map((row, index) => (
                   <tr key={`${file.id}-${index}`} className="border-t border-edge">
                     {headers.map((header) => (
                       <td key={header} className="py-2 pr-3">
@@ -232,9 +266,16 @@ export default function DatasetsPage() {
                 ))}
               </tbody>
             </table>
+            )}
           </section>
         );
       })}
+      {files.length > 0 && filteredCount === 0 && <p className="text-sm text-muted">No files match that search.</p>}
+      {filteredCount > shown && (
+        <button type="button" className="btn-ink" onClick={() => setShown((count) => count + 8)}>
+          Show more files ({filteredCount - shown} left)
+        </button>
+      )}
     </div>
   );
 }

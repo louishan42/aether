@@ -1,14 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { deleteImportedDataset, ingestCsv } from "../backend/src/services/ingest.js";
+import { draftBuckets } from "../backend/src/services/drafts.js";
 import { getStore } from "../backend/src/services/store.js";
 
 describe("csv ingest", () => {
-  it("replaces older customer rows so pages match the latest file", () => {
+  it("replaces a file with the same name and combines two different files", () => {
     const businessId = `biz-${crypto.randomUUID()}`;
     ingestCsv(businessId, "name,email\nOld Co,old@example.com\n", "customers.csv", "customers");
     ingestCsv(businessId, "name,email\nNew Co,new@example.com\n", "customers.csv", "customers");
+    ingestCsv(businessId, "name,email\nExtra Co,extra@example.com\n", "more-customers.csv", "customers");
     const customers = getStore().customers.filter((row) => row.businessId === businessId);
-    expect(customers.map((row) => row.email)).toEqual(["new@example.com"]);
+    expect(customers.map((row) => row.email).sort()).toEqual(["extra@example.com", "new@example.com"]);
   });
 
   it("keeps payroll files as review data instead of fake invoices", () => {
@@ -37,11 +39,29 @@ describe("csv ingest", () => {
     expect(invoices[0]?.customerName).toBe("New Co");
   });
 
-  it("deletes every customer row when the customer file is removed", () => {
+  it("deletes only the rows from the removed file", () => {
     const businessId = `biz-${crypto.randomUUID()}`;
-    const result = ingestCsv(businessId, "name,email\nAcme,acme@example.com\n", "customers.csv", "customers");
-    const removed = deleteImportedDataset(businessId, result.file.id);
+    const first = ingestCsv(businessId, "name,email\nAcme,acme@example.com\n", "customers.csv", "customers");
+    ingestCsv(businessId, "name,email\nBeta,beta@example.com\n", "more-customers.csv", "customers");
+    const removed = deleteImportedDataset(businessId, first.file.id);
     expect(removed.removed.customers).toBe(1);
-    expect(getStore().customers.filter((row) => row.businessId === businessId)).toHaveLength(0);
+    expect(getStore().customers.filter((row) => row.businessId === businessId).map((row) => row.email)).toEqual(["beta@example.com"]);
+  });
+
+  it("does not count grant checklists as reminder drafts", () => {
+    getStore().drafts.unshift({
+      id: crypto.randomUUID(),
+      agent: "grant",
+      recordId: "mra",
+      invoiceId: "mra",
+      subject: "Grant",
+      body: "x",
+      status: "pending",
+      generatedAt: new Date().toISOString(),
+      rationale: "",
+    });
+    const buckets = draftBuckets("demo-business");
+    expect(buckets.pendingSend).toBe(0);
+    expect(buckets.pendingChecklists).toBeGreaterThan(0);
   });
 });

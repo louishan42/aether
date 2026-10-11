@@ -22,10 +22,9 @@ export default function ApprovalsPage() {
   const [message, setMessage] = useState("");
 
   async function load() {
-    setMessage("Preparing drafts…");
     const data = await api.pending();
     setDrafts(data.drafts);
-    setMessage(data.drafts.length ? "" : "No drafts yet. Load CSVs on Datasets, then refresh this page.");
+    setMessage(data.drafts.length ? "" : "No drafts yet. Load CSVs on Datasets, then prepare reminders on that page.");
   }
 
   useReload(load, setMessage);
@@ -40,7 +39,7 @@ export default function ApprovalsPage() {
       <PageHeader
         eyebrow="Operations"
         title="Approvals"
-        description="Nothing is sent or recorded until you approve it, then confirm the action."
+        description="Reminder drafts come from invoice, customer, and booking files. Grant and compliance checklists come from Settings. Nothing is sent until you approve, then confirm."
       />
       <div className="flex flex-wrap gap-2">
         {filters.map((item) => (
@@ -50,6 +49,9 @@ export default function ApprovalsPage() {
             className={`min-h-11 px-3 py-2 text-sm ${filter === item ? "chip-on" : "btn-ghost"}`}
           >
             {item}
+            {item === "all"
+              ? ` (${drafts.length})`
+              : ` (${drafts.filter((draft) => draft.agent === item).length})`}
           </button>
         ))}
       </div>

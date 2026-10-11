@@ -128,7 +128,7 @@ router.post("/customers/import", async (req, res) => {
   const { businessId } = req as TenantRequest;
   const csv = typeof req.body?.csv === "string" ? req.body.csv : "";
   const filename = typeof req.body?.filename === "string" && req.body.filename.trim() ? req.body.filename.trim() : "customers.csv";
-  if (!csv.trim()) return res.status(400).json({ error: "No CSV provided. Dataset deferred." });
+  if (!csv.trim()) return res.status(400).json({ error: "No CSV provided." });
   const result = ingestCsv(businessId, csv, filename, "customers");
   await saveSnapshot();
   res.json({ imported: result.mapped, errors: [], customers: getStore().customers.filter((row) => row.businessId === businessId).slice(0, result.mapped) });
@@ -215,7 +215,7 @@ router.post("/appointments/import", async (req, res) => {
   const { businessId } = req as TenantRequest;
   const csv = typeof req.body?.csv === "string" ? req.body.csv : "";
   const filename = typeof req.body?.filename === "string" && req.body.filename.trim() ? req.body.filename.trim() : "appointments.csv";
-  if (!csv.trim()) return res.status(400).json({ error: "No CSV provided. Dataset deferred." });
+  if (!csv.trim()) return res.status(400).json({ error: "No CSV provided." });
   const result = ingestCsv(businessId, csv, filename, "appointments");
   await saveSnapshot();
   res.json({

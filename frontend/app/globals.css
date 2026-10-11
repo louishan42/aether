@@ -304,6 +304,12 @@ body {
   background: #6d28d9;
 }
 
+.dataset-file-scroll {
+  max-height: 11rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
 .about-card {
   display: flex;
   flex-direction: column;

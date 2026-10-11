@@ -6,10 +6,16 @@ import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import type { Invoice } from "../../lib/types";
 import { useReload } from "../../lib/useReload";
+import { DatasetFilter } from "../../components/DatasetFilter";
+import { TablePager } from "../../components/TablePager";
+import { listedDatasets, pageRows, rowsForView, type DatasetFile, type FileView } from "../../lib/datasets";
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [overdue, setOverdue] = useState<Invoice[]>([]);
+  const [files, setFiles] = useState<DatasetFile[]>([]);
+  const [fileId, setFileId] = useState<FileView>("all");
+  const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({
     invoiceNumber: "",
@@ -21,10 +27,15 @@ export default function InvoicesPage() {
   });
 
   async function load() {
-    const [all, due] = await Promise.all([api.invoices(), api.overdue()]);
+    const [all, due, records] = await Promise.all([api.invoices(), api.overdue(), api.records()]);
     setInvoices(all.invoices);
     setOverdue(due.invoices);
+    setFiles(listedDatasets(records).filter((file) => file.kind === "invoices"));
   }
+
+  const visible = rowsForView(invoices, fileId);
+  const visibleOverdue = rowsForView(overdue, fileId);
+  const paged = pageRows(visible, page);
 
   useReload(load, setMessage);
 
@@ -33,11 +44,11 @@ export default function InvoicesPage() {
       <PageHeader
         eyebrow="Records"
         title="Invoices"
-        description="Track unpaid bills. Paid and disputed rows are skipped. Bulk files go in Datasets."
+        description="All loaded invoice files combined. Reminders skip paid and disputed rows. Bulk files go in Datasets."
         action={
           <button
             className="btn-primary"
-            disabled={!invoices.length}
+            disabled={!visible.length}
             onClick={async () => {
               await api.analyze("invoice");
               setMessage("Drafts are waiting in Approvals.");
@@ -77,11 +88,22 @@ export default function InvoicesPage() {
       </section>
 
       <p className="text-sm text-muted">
-        {overdue.length} overdue and eligible. Need a file?{" "}
+        {visibleOverdue.length} overdue and eligible. Need a file?{" "}
         <Link href="/datasets" className="accent-text font-semibold hover:underline">
           Open Datasets
         </Link>
       </p>
+
+      <DatasetFilter
+        files={files}
+        value={fileId}
+        onChange={(next) => {
+          setFileId(next);
+          setPage(1);
+        }}
+        hasManual={invoices.some((row) => row.sourceImportId === "manual")}
+        rowTotal={visible.length}
+      />
 
       <section className="panel table-wrap">
         <table className="w-full min-w-[36rem] text-left text-sm">
@@ -95,14 +117,14 @@ export default function InvoicesPage() {
             </tr>
           </thead>
           <tbody>
-            {invoices.length === 0 && (
+            {visible.length === 0 && (
               <tr>
                 <td className="px-4 py-6 text-muted" colSpan={5}>
                   No invoices yet.
                 </td>
               </tr>
             )}
-            {invoices.map((invoice) => (
+            {paged.map((invoice) => (
               <tr key={invoice.id} className="border-t border-edge">
                 <td className="px-4 py-3">{invoice.invoiceNumber}</td>
                 <td className="px-4 py-3">
@@ -116,6 +138,7 @@ export default function InvoicesPage() {
             ))}
           </tbody>
         </table>
+        <TablePager total={visible.length} page={page} onPage={setPage} />
       </section>
     </div>
   );

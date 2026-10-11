@@ -14,12 +14,20 @@ const hrefs: Record<string, string> = {
   appointment: "/appointments",
 };
 
-function Metric({ label, value }: { label: string; value: number }) {
+const kindHref: Record<string, string> = {
+  invoices: "/invoices",
+  customers: "/customers",
+  appointments: "/appointments",
+  custom: "/datasets",
+};
+
+function Metric({ label, value, hint }: { label: string; value: number; hint?: string }) {
   const width = Math.min(100, 12 + value * 8);
   return (
     <div className="panel relative overflow-hidden p-5">
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
       <p className="mt-3 text-4xl font-semibold tracking-tight tabular-nums">{value}</p>
+      {hint ? <p className="mt-1 text-sm text-muted">{hint}</p> : null}
       <div className="bar-track mt-4">
         <div className="bar-fill" style={{ width: `${width}%` }} />
       </div>
@@ -61,6 +69,10 @@ export default function DashboardPage() {
   }, []);
 
   const totals = stats?.totals;
+  const files = stats?.datasets ?? [];
+  const fileCount = totals?.files ?? files.length;
+  const combinedHint =
+    fileCount > 1 ? `Combined from ${fileCount} files` : fileCount === 1 ? "From 1 file" : "No files yet";
 
   return (
     <div className="space-y-8">
@@ -72,10 +84,12 @@ export default function DashboardPage() {
           </div>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">Overview</h1>
           <p className="mt-2 max-w-xl text-sm text-muted">
-            Collections, grants, follow-ups, compliance, and bookings — drafts sit in Approvals until you send them.
+            Invoice, customer, and booking numbers are combined from current files. Grant and compliance numbers come from
+            Settings{stats?.profile?.name ? ` (${stats.profile.name})` : ""}, not from those files. Prepare drafts only
+            builds reminders for loaded records.
           </p>
         </div>
-          <button
+        <button
           className="btn-primary w-full sm:w-auto"
           disabled={busy}
           onClick={async () => {
@@ -90,17 +104,44 @@ export default function DashboardPage() {
             }
           }}
         >
-          {busy ? "Preparing…" : "Prepare all drafts"}
+          {busy ? "Preparing…" : "Prepare record drafts"}
         </button>
       </div>
 
       {error && <p className="text-sm text-red-700">{error}</p>}
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Metric label="Waiting on you" value={totals?.pendingApprovals ?? 0} />
-        <Metric label="Completed" value={totals?.sent ?? 0} />
-        <Metric label="Overdue invoices" value={totals?.overdue ?? 0} />
+        <Metric
+          label="Waiting to send"
+          value={totals?.pendingApprovals ?? 0}
+          hint="Invoice, customer, and booking drafts"
+        />
+        <Metric
+          label="Checklists waiting"
+          value={totals?.pendingChecklists ?? 0}
+          hint="Grant and compliance notes in Approvals"
+        />
+        <Metric label="Overdue invoices" value={totals?.overdue ?? 0} hint={`${totals?.invoices ?? 0} invoices total`} />
         <Metric label="Grant matches" value={totals?.grantMatches ?? 0} />
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Metric label="Dataset files" value={fileCount} hint={combinedHint} />
+        <Metric label="Rows in files" value={totals?.fileRows ?? 0} />
+        <Metric
+          label="Customers"
+          value={totals?.customers ?? 0}
+          hint={
+            (totals?.customerFiles ?? 0) > 1 ? `Combined from ${totals?.customerFiles} files` : undefined
+          }
+        />
+        <Metric
+          label="Bookings"
+          value={totals?.appointments ?? 0}
+          hint={
+            (totals?.appointmentFiles ?? 0) > 1 ? `Combined from ${totals?.appointmentFiles} files` : undefined
+          }
+        />
       </section>
 
       <section className="grid gap-3 md:grid-cols-6">
@@ -121,6 +162,46 @@ export default function DashboardPage() {
             <p className="accent-text mt-6 text-xs font-semibold tracking-wide">Open →</p>
           </Link>
         ))}
+      </section>
+
+      <section className="panel overflow-hidden p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="font-medium tracking-tight">Current datasets</h2>
+            <p className="mt-1 text-sm text-muted">
+              {fileCount
+                ? `${fileCount} file${fileCount === 1 ? "" : "s"} · ${totals?.fileRows ?? 0} stored rows · same-kind files are combined`
+                : "No files yet. Drop CSVs on Datasets."}
+            </p>
+          </div>
+          <Link href="/datasets" className="accent-text text-sm font-semibold hover:underline">
+            Manage files
+          </Link>
+        </div>
+        {files.length === 0 && <p className="mt-4 text-sm text-muted">Quiet. Load a CSV to update these numbers.</p>}
+        {files.length > 0 && (
+          <ul className="mt-4 divide-y divide-edge">
+            {files.slice(0, 12).map((file) => (
+              <li key={file.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+                <Link href={kindHref[file.kind] ?? "/datasets"} className="font-medium hover:underline">
+                  {file.filename}
+                </Link>
+                <span className="text-muted">
+                  {file.kind} · {file.rowCount} rows
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {files.length > 12 && (
+          <p className="mt-3 text-sm text-muted">
+            {files.length - 12} more on{" "}
+            <Link href="/datasets" className="accent-text font-semibold hover:underline">
+              Datasets
+            </Link>
+            .
+          </p>
+        )}
       </section>
 
       <section className="panel overflow-hidden p-5">

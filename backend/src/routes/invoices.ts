@@ -46,7 +46,7 @@ router.post("/import", async (req, res) => {
   const csv = typeof req.body?.csv === "string" ? req.body.csv : "";
   const filename = typeof req.body?.filename === "string" && req.body.filename.trim() ? req.body.filename.trim() : "invoices.csv";
   if (!csv.trim()) {
-    return res.status(400).json({ error: "No CSV provided. Dataset work is deferred; paste CSV later." });
+    return res.status(400).json({ error: "No CSV provided." });
   }
   const result = ingestCsv(businessId, csv, filename, "invoices");
   await saveSnapshot();

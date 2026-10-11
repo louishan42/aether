@@ -3,6 +3,7 @@ import { COMPLIANCE_CATALOG } from "../../../agents/catalogs/compliance.js";
 import { runAllAgents } from "../../../agents/runners/run.js";
 import { isEligible } from "./overdue.js";
 import { saveSnapshot } from "./persist.js";
+import { draftBuckets, openDrafts } from "./drafts.js";
 import { addLog, getPolicy, getProfile, getStore } from "./store.js";
 
 export type ChatLink = { href: string; label: string };
@@ -21,7 +22,7 @@ export async function answerChat(businessId: string, raw: string): Promise<ChatR
   const overdue = invoices.filter((row) => isEligible(row, policy).ok);
   const customers = store.customers.filter((row) => row.businessId === businessId);
   const appointments = store.appointments.filter((row) => row.businessId === businessId);
-  const drafts = store.drafts.filter((draft) => draft.status === "pending" || draft.status === "approved");
+  const buckets = draftBuckets(businessId);
   const files = store.imports.filter((row) => row.businessId === businessId);
 
   if (!text || has(text, "help", "hi", "hello", "what can")) {
@@ -38,12 +39,7 @@ export async function answerChat(businessId: string, raw: string): Promise<ChatR
   if (has(text, "run agent", "prepare", "analyze", "start agent", "kick")) {
     const result = await runAllAgents(businessId);
     await saveSnapshot();
-    const created =
-      result.invoice.drafts.length +
-      result.grant.drafts.length +
-      result.customer.drafts.length +
-      result.compliance.drafts.length +
-      result.appointment.drafts.length;
+    const created = result.invoice.drafts.length + result.customer.drafts.length + result.appointment.drafts.length;
     return {
       reply: `Agents ran. New drafts: ${created}. Open Approvals to approve before anything is sent.`,
       links: [{ href: "/approvals", label: "Approvals" }],
@@ -79,6 +75,7 @@ export async function answerChat(businessId: string, raw: string): Promise<ChatR
   }
 
   if (has(text, "approval", "draft", "pending")) {
+    const drafts = openDrafts(businessId);
     const lines = drafts.slice(0, 8).map((row) => `${row.agent}: ${row.subject} (${row.status})`);
     return {
       reply: drafts.length ? `${drafts.length} item(s) waiting:\n${lines.join("\n")}` : "No drafts waiting. Say “run agents” after you load data.",
@@ -130,7 +127,7 @@ export async function answerChat(businessId: string, raw: string): Promise<ChatR
 
   if (has(text, "overview", "stat", "dashboard", "how many", "summary")) {
     return {
-      reply: `Overview: ${invoices.length} invoices (${overdue.length} overdue), ${customers.length} customers, ${appointments.length} bookings, ${drafts.filter((d) => d.status === "pending").length} pending approvals, ${files.length} dataset file(s).`,
+      reply: `Overview is combined from ${files.length} dataset file(s): ${invoices.length} invoices (${overdue.length} overdue), ${customers.length} customers, ${appointments.length} bookings, ${buckets.pendingSend} reminder draft(s), ${buckets.pendingChecklists} checklist(s).`,
       links: [{ href: "/dashboard", label: "Overview" }],
     };
   }

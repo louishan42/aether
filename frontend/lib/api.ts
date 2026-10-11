@@ -63,7 +63,10 @@ export const api = {
     }>(
       "/api/workspace/grants",
     ),
-  customers: () => request<{ customers: { id: string; name: string; email: string; lastContactAt: string | null; notes: string }[] }>("/api/workspace/customers"),
+  customers: () =>
+    request<{ customers: { id: string; name: string; email: string; lastContactAt: string | null; notes: string; sourceImportId?: string | null }[] }>(
+      "/api/workspace/customers",
+    ),
   createCustomer: (body: { name: string; email: string; lastContactAt?: string; notes?: string }) =>
     request("/api/workspace/customers", { method: "POST", body: JSON.stringify(body) }),
   importCustomers: (csv: string, filename?: string) =>
@@ -75,7 +78,9 @@ export const api = {
   markEvidence: (id: string, status: "missing" | "submitted" | "waived") =>
     request(`/api/workspace/compliance/${id}/evidence`, { method: "POST", body: JSON.stringify({ status }) }),
   appointments: () =>
-    request<{ appointments: { id: string; customerName: string; customerEmail: string; startsAt: string; status: string }[] }>("/api/workspace/appointments"),
+    request<{ appointments: { id: string; customerName: string; customerEmail: string; startsAt: string; status: string; sourceImportId?: string | null }[] }>(
+      "/api/workspace/appointments",
+    ),
   createAppointment: (body: { customerName: string; customerEmail: string; startsAt: string }) =>
     request("/api/workspace/appointments", { method: "POST", body: JSON.stringify(body) }),
   cancelAppointment: (id: string) => request(`/api/workspace/appointments/${id}/cancel`, { method: "POST" }),

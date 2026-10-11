@@ -8,9 +8,13 @@ export function enrichProfile(businessId: string): BusinessProfile {
   const store = getStore();
   let staff = 0;
   let industry = base.industry;
-  let usesDigitalTools = base.usesDigitalTools || store.invoices.length + store.customers.length + store.appointments.length > 0;
+  const deskRows =
+    store.invoices.filter((row) => row.businessId === businessId).length +
+    store.customers.filter((row) => row.businessId === businessId).length +
+    store.appointments.filter((row) => row.businessId === businessId).length;
+  let usesDigitalTools = base.usesDigitalTools || deskRows > 0;
 
-  for (const file of store.imports) {
+  for (const file of store.imports.filter((row) => row.businessId === businessId)) {
     const blob = `${file.filename} ${(file.headers ?? []).join(" ")}`.toLowerCase();
     if (/employee_id|employee_name|payroll|gusto|staff/.test(blob)) {
       const ids = new Set(

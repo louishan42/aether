@@ -5,15 +5,26 @@ import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
+import { DatasetFilter } from "../../components/DatasetFilter";
+import { TablePager } from "../../components/TablePager";
+import { listedDatasets, pageRows, rowsForView, type DatasetFile, type FileView } from "../../lib/datasets";
 
 export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<{ id: string; customerName: string; customerEmail: string; startsAt: string; status: string }[]>([]);
+  const [appointments, setAppointments] = useState<{ id: string; customerName: string; customerEmail: string; startsAt: string; status: string; sourceImportId?: string | null }[]>([]);
+  const [files, setFiles] = useState<DatasetFile[]>([]);
+  const [fileId, setFileId] = useState<FileView>("all");
+  const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({ customerName: "", customerEmail: "", startsAt: "" });
 
   async function load() {
-    setAppointments((await api.appointments()).appointments);
+    const [all, records] = await Promise.all([api.appointments(), api.records()]);
+    setAppointments(all.appointments);
+    setFiles(listedDatasets(records).filter((file) => file.kind === "appointments"));
   }
+
+  const visible = rowsForView(appointments, fileId);
+  const paged = pageRows(visible, page);
 
   useReload(load, setMessage);
 
@@ -22,11 +33,11 @@ export default function AppointmentsPage() {
       <PageHeader
         eyebrow="Records"
         title="Bookings"
-        description="Create or cancel appointments. Reminders are prepared only for bookings inside the reminder window."
+        description="All loaded booking files combined. Reminders are prepared only for booked slots inside the reminder window."
         action={
           <button
             className="btn-primary"
-            disabled={!appointments.length}
+            disabled={!visible.length}
             onClick={async () => {
               await api.analyze("appointment");
               setMessage("Reminder drafts are waiting in Approvals.");
@@ -62,6 +73,17 @@ export default function AppointmentsPage() {
         </Link>
         .
       </p>
+      <DatasetFilter
+        files={files}
+        value={fileId}
+        onChange={(next) => {
+          setFileId(next);
+          setPage(1);
+        }}
+        hasManual={appointments.some((row) => row.sourceImportId === "manual")}
+        rowTotal={visible.length}
+      />
+
       <section className="panel table-wrap">
         <table className="w-full min-w-[32rem] text-left text-sm">
           <thead className="bg-paper text-muted">
@@ -73,14 +95,14 @@ export default function AppointmentsPage() {
             </tr>
           </thead>
           <tbody>
-            {appointments.length === 0 && (
+            {visible.length === 0 && (
               <tr>
                 <td className="px-4 py-6 text-muted" colSpan={4}>
                   No bookings yet.
                 </td>
               </tr>
             )}
-            {appointments.map((row) => (
+            {paged.map((row) => (
               <tr key={row.id} className="border-t border-edge">
                 <td className="px-4 py-3">
                   {row.customerName}
@@ -105,6 +127,7 @@ export default function AppointmentsPage() {
             ))}
           </tbody>
         </table>
+        <TablePager total={visible.length} page={page} onPage={setPage} />
       </section>
     </div>
   );

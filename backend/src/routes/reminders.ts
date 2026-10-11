@@ -3,19 +3,10 @@ import type { TenantRequest } from "../middleware/tenant.js";
 import { addLog, getStore } from "../services/store.js";
 import { saveSnapshot } from "../services/persist.js";
 import { createTools } from "../../../agents/tools/index.js";
-import { runAllAgents, runInvoiceAgent } from "../../../agents/runners/run.js";
-import type { AgentKind } from "../types.js";
+import { runInvoiceAgent } from "../../../agents/runners/run.js";
+import { draftInTenant, openDrafts } from "../services/drafts.js";
 
 const router = Router();
-
-function draftInTenant(businessId: string, recordId: string, agent: AgentKind) {
-  const store = getStore();
-  if (agent === "invoice") return store.invoices.some((row) => row.id === recordId && row.businessId === businessId);
-  if (agent === "customer") return store.customers.some((row) => row.id === recordId && row.businessId === businessId);
-  if (agent === "appointment") return store.appointments.some((row) => row.id === recordId && row.businessId === businessId);
-  if (agent === "grant" || agent === "compliance") return true;
-  return false;
-}
 
 router.post("/generate", async (req, res) => {
   const { businessId } = req as TenantRequest;
@@ -23,27 +14,9 @@ router.post("/generate", async (req, res) => {
   res.json(result);
 });
 
-function listPending(businessId: string) {
-  const store = getStore();
-  return store.drafts
-    .filter((draft) => (draft.status === "pending" || draft.status === "approved") && draftInTenant(businessId, draft.recordId, draft.agent))
-    .map((draft) => ({
-      ...draft,
-      invoice: store.invoices.find((invoice) => invoice.id === draft.recordId),
-      customer: store.customers.find((row) => row.id === draft.recordId),
-      appointment: store.appointments.find((row) => row.id === draft.recordId),
-    }));
-}
-
-router.get("/pending", async (req, res) => {
+router.get("/pending", (req, res) => {
   const { businessId } = req as TenantRequest;
-  let drafts = listPending(businessId);
-  if (drafts.length === 0) {
-    await runAllAgents(businessId);
-    drafts = listPending(businessId);
-    await saveSnapshot();
-  }
-  res.json({ drafts });
+  res.json({ drafts: openDrafts(businessId) });
 });
 
 router.post("/:id/approve", (req, res) => {
@@ -61,6 +34,7 @@ router.post("/:id/approve", (req, res) => {
     action: decision === "approved" ? "approve_draft" : "reject_draft",
     result: `${actorId} ${decision} ${draft.id}`,
   });
+  void saveSnapshot();
   res.json({ draft });
 });
 
@@ -77,6 +51,7 @@ router.post("/:id/send", async (req, res) => {
       action: "execute_approved_draft",
       result: result.detail,
     });
+    await saveSnapshot();
     res.json(result);
   } catch (error) {
     res.status(400).json({ error: error instanceof Error ? error.message : "send failed" });

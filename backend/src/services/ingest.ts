@@ -179,6 +179,7 @@ function applyMappedRows(businessId: string, kind: DetectedKind, rows: Record<st
     if (kind === "invoices") {
       const invoice = asInvoice(businessId, row, index);
       if (!invoice) return;
+      if (store.invoices.some((item) => item.businessId === businessId && item.invoiceNumber === invoice.invoiceNumber)) return;
       invoice.sourceImportId = fileId;
       store.invoices.unshift(invoice);
       mapped += 1;
@@ -192,6 +193,15 @@ function applyMappedRows(businessId: string, kind: DetectedKind, rows: Record<st
     } else if (kind === "appointments") {
       const appointment = asAppointment(businessId, row, index);
       if (!appointment) return;
+      if (
+        store.appointments.some(
+          (item) =>
+            item.businessId === businessId &&
+            item.customerEmail.toLowerCase() === appointment.customerEmail.toLowerCase() &&
+            item.startsAt === appointment.startsAt,
+        )
+      )
+        return;
       appointment.sourceImportId = fileId;
       store.appointments.unshift(appointment);
       mapped += 1;
@@ -200,14 +210,10 @@ function applyMappedRows(businessId: string, kind: DetectedKind, rows: Record<st
   return mapped;
 }
 
-function dropStaleFiles(businessId: string, filename: string, kind: DetectedKind) {
+function dropStaleFiles(businessId: string, filename: string) {
   const store = getStore();
   const stale = store.imports
-    .filter((row) => {
-      if (row.businessId !== businessId) return false;
-      if (row.filename.toLowerCase() === filename.toLowerCase()) return true;
-      return kind !== "custom" && row.kind === kind;
-    })
+    .filter((row) => row.businessId === businessId && row.filename.toLowerCase() === filename.toLowerCase())
     .map((row) => row.id);
   for (const id of stale) deleteImportedDataset(businessId, id);
 }
@@ -219,7 +225,8 @@ export function ingestCsv(businessId: string, csv: string, filename = "upload.cs
   }
   const kind = detectKind(parsed, filename, preferredKind);
   const headers = Object.keys(parsed[0] ?? {});
-  dropStaleFiles(businessId, filename, kind);
+  dropStaleFiles(businessId, filename);
+  const existingSameKind = getStore().imports.filter((row) => row.businessId === businessId && row.kind === kind).length;
   const file = recordImport({
     businessId,
     filename,
@@ -241,7 +248,9 @@ export function ingestCsv(businessId: string, csv: string, filename = "upload.cs
     reason:
       kind === "custom"
         ? "Columns do not match invoices, customers, or bookings, so this file stays on Datasets only. Agents did not run."
-        : `Matched as ${kind}. Only the ${kind === "invoices" ? "collections" : kind === "customers" ? "follow-up" : "booking"} agent ran.`,
+        : existingSameKind
+          ? `Matched as ${kind} and combined with your other ${kind} file(s) (${existingSameKind + 1} files). Combined is the default; search, pick one, or pick several on that page.`
+          : `Matched as ${kind}. Only the ${kind === "invoices" ? "collections" : kind === "customers" ? "follow-up" : "booking"} agent ran.`,
   };
 }
 
@@ -309,34 +318,25 @@ export function deskCounts(businessId: string) {
   };
 }
 
-function dropKindRecords(businessId: string, kind: DetectedKind) {
-  const store = getStore();
-  const removed = { invoices: 0, customers: 0, appointments: 0 };
-  if (kind === "invoices") {
-    const ids = new Set(store.invoices.filter((row) => row.businessId === businessId).map((row) => row.id));
-    removed.invoices = ids.size;
-    store.invoices = store.invoices.filter((row) => row.businessId !== businessId);
-    store.drafts = store.drafts.filter((draft) => draft.agent !== "invoice" && !ids.has(draft.recordId) && !ids.has(draft.invoiceId));
-  } else if (kind === "customers") {
-    const ids = new Set(store.customers.filter((row) => row.businessId === businessId).map((row) => row.id));
-    removed.customers = ids.size;
-    store.customers = store.customers.filter((row) => row.businessId !== businessId);
-    store.drafts = store.drafts.filter((draft) => draft.agent !== "customer" && !ids.has(draft.recordId));
-  } else if (kind === "appointments") {
-    const ids = new Set(store.appointments.filter((row) => row.businessId === businessId).map((row) => row.id));
-    removed.appointments = ids.size;
-    store.appointments = store.appointments.filter((row) => row.businessId !== businessId);
-    store.drafts = store.drafts.filter((draft) => draft.agent !== "appointment" && !ids.has(draft.recordId));
-  }
-  return removed;
-}
-
 export function deleteImportedDataset(businessId: string, importId: string) {
   const store = getStore();
   const file = store.imports.find((row) => row.id === importId && row.businessId === businessId);
   if (!file) throw new Error("Dataset not found.");
-  const removed = dropKindRecords(businessId, file.kind);
+  const invoiceIds = new Set(store.invoices.filter((row) => row.sourceImportId === importId).map((row) => row.id));
+  const customerIds = new Set(store.customers.filter((row) => row.sourceImportId === importId).map((row) => row.id));
+  const appointmentIds = new Set(store.appointments.filter((row) => row.sourceImportId === importId).map((row) => row.id));
+  store.invoices = store.invoices.filter((row) => row.sourceImportId !== importId);
+  store.customers = store.customers.filter((row) => row.sourceImportId !== importId);
+  store.appointments = store.appointments.filter((row) => row.sourceImportId !== importId);
+  store.drafts = store.drafts.filter(
+    (draft) => !invoiceIds.has(draft.recordId) && !invoiceIds.has(draft.invoiceId) && !customerIds.has(draft.recordId) && !appointmentIds.has(draft.recordId),
+  );
   store.imports = store.imports.filter((row) => row.id !== importId);
   pruneOrphanDrafts();
-  return { filename: file.filename, kind: file.kind, removed, refreshed: deskCounts(businessId) };
+  return {
+    filename: file.filename,
+    kind: file.kind,
+    removed: { invoices: invoiceIds.size, customers: customerIds.size, appointments: appointmentIds.size },
+    refreshed: deskCounts(businessId),
+  };
 }
