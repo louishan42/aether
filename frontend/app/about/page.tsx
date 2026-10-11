@@ -7,6 +7,7 @@ import { PageHeader } from "../../components/PageHeader";
 const team = [
   {
     slug: "shah",
+    photoPos: "center 30%",
     name: "Shah Htet Naing",
     short: "Shah",
     role: "Developer · Full-Stack & AI Systems Leader",
@@ -19,6 +20,7 @@ const team = [
   },
   {
     slug: "louis",
+    photoPos: "center 78%",
     name: "Thi Han Htun",
     short: "Louis",
     role: "Developer · Backend & Infrastructure Specialist",
@@ -31,6 +33,7 @@ const team = [
   },
   {
     slug: "loki",
+    photoPos: "center 18%",
     name: "Nyan Lin Htet",
     short: "Loki",
     role: "Business Development Manager · Product & SME Ecosystem Lead",
@@ -53,7 +56,7 @@ const stack = [
   { name: "Resend", mark: "@" },
 ];
 
-function TeamPhoto({ slug, name }: { slug: string; name: string }) {
+function TeamPhoto({ slug, name, photoPos }: { slug: string; name: string; photoPos: string }) {
   const [src, setSrc] = useState(`/team/${slug}.jpg`);
   const [missing, setMissing] = useState(false);
 
@@ -68,6 +71,7 @@ function TeamPhoto({ slug, name }: { slug: string; name: string }) {
         <img
           src={src}
           alt={`${name}`}
+          style={{ objectPosition: photoPos }}
           onError={() => {
             if (src.endsWith(".jpg")) setSrc(`/team/${slug}.png`);
             else setMissing(true);
@@ -97,7 +101,7 @@ export default function AboutPage() {
       <section className="grid gap-4 lg:grid-cols-3">
         {team.map((member) => (
           <article key={member.slug} className="panel flex flex-col p-5">
-            <TeamPhoto slug={member.slug} name={member.name} />
+            <TeamPhoto slug={member.slug} name={member.name} photoPos={member.photoPos} />
             <h2 className="mt-4 text-xl font-semibold tracking-tight">
               {member.name} <span className="text-muted">({member.short})</span>
             </h2>
