@@ -27,10 +27,11 @@ export function DatasetFilter({
 
   if (files.length < 2 && !hasManual) return null;
 
+  const bothLabel = files.length === 2 ? "Both files" : `All ${files.length} files`;
   const label = Array.isArray(value)
     ? `${value.length} file${value.length === 1 ? "" : "s"} selected`
     : value === "all"
-      ? `Combined · ${files.length} file${files.length === 1 ? "" : "s"}`
+      ? bothLabel
       : value === "manual"
         ? "Manual rows"
         : files.find((file) => file.id === value)?.filename ?? "One file";
@@ -49,8 +50,9 @@ export function DatasetFilter({
     <section className="panel p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.16em] text-muted">Dataset view</p>
+          <p className="text-[11px] uppercase tracking-[0.16em] text-muted">Which files</p>
           <p className="mt-1 font-medium tracking-tight">{label}</p>
+          <p className="mt-1 text-sm text-muted">Both is the default. Click a filename for one file only.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -61,7 +63,7 @@ export function DatasetFilter({
               onChange("all");
             }}
           >
-            Combined
+            {files.length === 2 ? "Both files" : "All files"}
           </button>
           {hasManual ? (
             <button
