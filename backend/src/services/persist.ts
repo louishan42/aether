@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { prisma } from "./db.js";
+import { databaseReady, prisma } from "./db.js";
 import { addLog, getStore, setPolicy, setProfile } from "./store.js";
 import { ingestCsv, pruneOrphanDrafts, syncDeskFromDatasets } from "./ingest.js";
 import type { AgentDraft, Appointment, Invoice } from "../types.js";
@@ -28,6 +28,10 @@ function asDate(value: string | Date | null | undefined) {
 }
 
 export async function loadSnapshot() {
+  if (!databaseReady) {
+    console.warn("DATABASE_URL is not Postgres; running in memory only.");
+    return;
+  }
   const store = getStore();
   const [invoices, customers, appointments, drafts, logs, imports, profiles, policies, evidence] = await Promise.all([
     prisma.invoice.findMany(),
@@ -91,6 +95,7 @@ export async function loadSnapshot() {
 }
 
 export async function saveSnapshot() {
+  if (!databaseReady) return;
   const store = getStore();
   const ops = [
     prisma.invoice.deleteMany(),
