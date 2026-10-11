@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import type { Invoice } from "../../lib/types";
 import { useReload } from "../../lib/useReload";
 import { DatasetFilter } from "../../components/DatasetFilter";
 import { TablePager } from "../../components/TablePager";
-import { listedDatasets, pageRows, rowsForView, type DatasetFile, type FileView } from "../../lib/datasets";
+import { listedDatasets, pageRows, rowsForView, type DatasetFile } from "../../lib/datasets";
+import { useFileView } from "../../lib/fileView";
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [overdue, setOverdue] = useState<Invoice[]>([]);
+  const { view: fileId } = useFileView();
   const [files, setFiles] = useState<DatasetFile[]>([]);
-  const [fileId, setFileId] = useState<FileView>("all");
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({
@@ -29,7 +30,7 @@ export default function InvoicesPage() {
     const [all, due, records] = await Promise.all([api.invoices(), api.overdue(), api.records()]);
     setInvoices(all.invoices);
     setOverdue(due.invoices);
-    setFiles(listedDatasets(records).filter((file) => file.kind === "invoices"));
+    setFiles(listedDatasets(records));
   }
 
   const visible = rowsForView(invoices, fileId);
@@ -37,6 +38,9 @@ export default function InvoicesPage() {
   const paged = pageRows(visible, page);
 
   useReload(load, setMessage);
+  useEffect(() => {
+    setPage(1);
+  }, [fileId]);
 
   return (
     <div className="space-y-6">
@@ -85,16 +89,7 @@ export default function InvoicesPage() {
         </button>
       </section>
 
-      <DatasetFilter
-        files={files}
-        value={fileId}
-        onChange={(next) => {
-          setFileId(next);
-          setPage(1);
-        }}
-        hasManual={invoices.some((row) => row.sourceImportId === "manual")}
-        rowTotal={visible.length}
-      />
+      <DatasetFilter files={files} hasManual={invoices.some((row) => row.sourceImportId === "manual")} />
 
       <section className="panel table-wrap">
         <table className="w-full min-w-[36rem] text-left text-sm">

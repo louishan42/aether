@@ -24,7 +24,8 @@ async function request<T>(path: string, init?: RequestInit, direct = false): Pro
 }
 
 export const api = {
-  stats: () => request<import("./types").Stats>("/api/dashboard/stats"),
+  stats: (files = "all") =>
+    request<import("./types").Stats>(`/api/dashboard/stats?files=${encodeURIComponent(files)}`),
   invoices: () => request<{ invoices: import("./types").Invoice[] }>("/api/invoices"),
   overdue: () => request<{ invoices: import("./types").Invoice[] }>("/api/invoices/overdue"),
   createInvoice: (body: {

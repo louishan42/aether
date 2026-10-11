@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
+import { DatasetFilter } from "../../components/DatasetFilter";
 import type { BusinessProfile, Stats } from "../../lib/types";
 
 const emptyPolicy: Stats["policy"] = {
@@ -48,6 +49,7 @@ export default function SettingsPage() {
         title="Settings"
       />
       {message && <p className="text-sm">{message}</p>}
+      <DatasetFilter />
 
       <section className="space-y-4">
         <h2 className="font-medium tracking-tight">Business profile</h2>

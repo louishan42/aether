@@ -8,22 +8,43 @@ import { z } from "zod";
 
 const router = Router();
 
+function parseFileIds(raw: unknown) {
+  const text = String(raw ?? "all");
+  if (!text || text === "all") return null;
+  return new Set(text.split(",").filter(Boolean));
+}
+
+function inFiles(ids: Set<string> | null, sourceImportId?: string | null) {
+  if (!ids) return true;
+  return Boolean(sourceImportId && ids.has(sourceImportId));
+}
+
 router.get("/stats", (req, res) => {
   const { businessId } = req as TenantRequest;
   const store = getStore();
   const policy = getPolicy(businessId);
   const profile = enrichProfile(businessId);
-  const invoices = store.invoices.filter((invoice) => invoice.businessId === businessId);
+  const ids = parseFileIds(req.query.files);
+  const invoices = store.invoices.filter((invoice) => invoice.businessId === businessId && inFiles(ids, invoice.sourceImportId));
   const overdue = invoices.filter((invoice) => isEligible(invoice, policy).ok);
-  const customers = store.customers.filter((row) => row.businessId === businessId);
-  const appointments = store.appointments.filter((row) => row.businessId === businessId);
-  const files = store.imports.filter((row) => row.businessId === businessId);
+  const customers = store.customers.filter((row) => row.businessId === businessId && inFiles(ids, row.sourceImportId));
+  const appointments = store.appointments.filter((row) => row.businessId === businessId && inFiles(ids, row.sourceImportId));
+  const files = store.imports.filter((row) => row.businessId === businessId && (!ids || ids.has(row.id)));
   const grantRows = grantMatches(businessId);
   const grants = grantRows.filter((grant) => grant.match.ok);
   const complianceAll = complianceItems(businessId);
   const complianceGaps = complianceAll.filter((item) => item.applies && item.evidenceStatus === "missing").length;
   const buckets = draftBuckets(businessId);
-  const tenantDrafts = store.drafts.filter((draft) => draftInTenant(businessId, draft.recordId, draft.agent));
+  const tenantDrafts = store.drafts.filter((draft) => {
+    if (!draftInTenant(businessId, draft.recordId, draft.agent)) return false;
+    if (!ids) return true;
+    const invoice = store.invoices.find((row) => row.id === draft.recordId);
+    const customer = store.customers.find((row) => row.id === draft.recordId);
+    const appointment = store.appointments.find((row) => row.id === draft.recordId);
+    return inFiles(ids, invoice?.sourceImportId ?? customer?.sourceImportId ?? appointment?.sourceImportId);
+  });
+  const pendingSend = tenantDrafts.filter((draft) => draft.status === "pending" && ["invoice", "customer", "appointment"].includes(draft.agent)).length;
+  const pendingChecklists = tenantDrafts.filter((draft) => draft.status === "pending" && ["grant", "compliance"].includes(draft.agent)).length;
   const invoiceFiles = files.filter((file) => file.kind === "invoices").length;
   const customerFiles = files.filter((file) => file.kind === "customers").length;
   const appointmentFiles = files.filter((file) => file.kind === "appointments").length;
@@ -43,8 +64,8 @@ router.get("/stats", (req, res) => {
       invoices: invoices.length,
       overdue: overdue.length,
       overdueAmount: overdue.reduce((sum, invoice) => sum + invoice.amountSgd, 0),
-      pendingApprovals: buckets.pendingSend,
-      pendingChecklists: buckets.pendingChecklists,
+      pendingApprovals: ids ? pendingSend : buckets.pendingSend,
+      pendingChecklists: ids ? pendingChecklists : buckets.pendingChecklists,
       sent: buckets.sent,
       customers: customers.length,
       appointments: appointments.length,

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { ChatDock } from "./ChatDock";
+import { FileViewProvider } from "../lib/fileView";
 
 const groups = [
   {
@@ -53,6 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <FileViewProvider>
     <div className="min-h-screen bg-white md:pl-56" onMouseMove={moveSpot}>
       <div className="fx" aria-hidden>
         <div className="fx-orb fx-orb-a" />
@@ -95,5 +97,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="page mx-auto max-w-6xl px-4 py-5 md:px-6 md:py-8">{children}</main>
       <ChatDock />
     </div>
+    </FileViewProvider>
   );
 }

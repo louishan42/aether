@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
 import { DatasetFilter } from "../../components/DatasetFilter";
 import { TablePager } from "../../components/TablePager";
-import { listedDatasets, pageRows, rowsForView, type DatasetFile, type FileView } from "../../lib/datasets";
+import { listedDatasets, pageRows, rowsForView, type DatasetFile } from "../../lib/datasets";
+import { useFileView } from "../../lib/fileView";
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<{ id: string; name: string; email: string; lastContactAt: string | null; notes: string; sourceImportId?: string | null }[]>([]);
+  const { view: fileId } = useFileView();
   const [files, setFiles] = useState<DatasetFile[]>([]);
-  const [fileId, setFileId] = useState<FileView>("all");
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({ name: "", email: "", lastContactAt: "", notes: "" });
@@ -19,13 +20,16 @@ export default function CustomersPage() {
   async function load() {
     const [all, records] = await Promise.all([api.customers(), api.records()]);
     setCustomers(all.customers);
-    setFiles(listedDatasets(records).filter((file) => file.kind === "customers"));
+    setFiles(listedDatasets(records));
   }
 
   const visible = rowsForView(customers, fileId);
   const paged = pageRows(visible, page);
 
   useReload(load, setMessage);
+  useEffect(() => {
+    setPage(1);
+  }, [fileId]);
 
   return (
     <div className="space-y-6">
@@ -70,16 +74,7 @@ export default function CustomersPage() {
         </button>
       </section>
       {message && <p className="text-sm">{message}</p>}
-      <DatasetFilter
-        files={files}
-        value={fileId}
-        onChange={(next) => {
-          setFileId(next);
-          setPage(1);
-        }}
-        hasManual={customers.some((row) => row.sourceImportId === "manual")}
-        rowTotal={visible.length}
-      />
+      <DatasetFilter files={files} hasManual={customers.some((row) => row.sourceImportId === "manual")} />
 
       <section className="panel table-wrap">
         <table className="w-full min-w-[28rem] text-left text-sm">

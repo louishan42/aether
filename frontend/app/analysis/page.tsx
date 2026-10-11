@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import type { Stats } from "../../lib/types";
 import { useReload } from "../../lib/useReload";
@@ -8,18 +8,24 @@ import { BarChart, PieChart } from "../../components/Charts";
 import { chartsFromStats } from "../../lib/chartsFromStats";
 import { exportLockedReport } from "../../lib/exportReport";
 import { PageHeader } from "../../components/PageHeader";
+import { DatasetFilter } from "../../components/DatasetFilter";
+import { useFileView, viewToQuery } from "../../lib/fileView";
 
 export default function AnalysisPage() {
+  const { view } = useFileView();
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
   const [password, setPassword] = useState("");
 
   async function load() {
-    setStats(await api.stats());
+    setStats(await api.stats(viewToQuery(view)));
   }
 
   useReload(load, setError);
+  useEffect(() => {
+    void load();
+  }, [view]);
   const charts = chartsFromStats(stats);
   const totals = stats?.totals;
 
@@ -64,6 +70,8 @@ export default function AnalysisPage() {
       />
 
       {error && <p className="text-sm text-red-700">{error}</p>}
+
+      <DatasetFilter />
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[

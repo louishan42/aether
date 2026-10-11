@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
@@ -73,8 +72,7 @@ export default function DatasetsPage() {
         );
       }
       await load();
-      const together = chosen.length > 1 ? " Both files stay. Records pages start on both." : "";
-      setMessage(`${notes.join(" · ")}${together}`);
+      setMessage(notes.join(" · "));
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Import failed");
     } finally {
@@ -90,24 +88,6 @@ export default function DatasetsPage() {
       />
       {message && <p className="text-sm text-red-800">{message}</p>}
 
-      <section className="file-how">
-        <article>
-          <p>1</p>
-          <h2>Drop one, or both</h2>
-          <p>Choose files together. Both stay on the desk.</p>
-        </article>
-        <article>
-          <p>2</p>
-          <h2>Add or replace</h2>
-          <p>Different names add. Same name replaces that file only.</p>
-        </article>
-        <article>
-          <p>3</p>
-          <h2>Then pick the view</h2>
-          <p>Invoices, Customers, Bookings start on both files. Click a name for one. Pick several to mix.</p>
-        </article>
-      </section>
-
       <section
         className={`panel drop-zone p-8 text-center ${active ? "active" : ""}`}
         onDragOver={(event) => {
@@ -121,8 +101,8 @@ export default function DatasetsPage() {
           await handleFiles(event.dataTransfer.files);
         }}
       >
-        <p className="text-lg font-semibold tracking-tight">Drop one file or both</p>
-        <p className="mt-2 text-sm text-muted">CSV or TSV. Auto-detect, or set the type first.</p>
+        <p className="text-lg font-semibold tracking-tight">Drop any dataset here</p>
+        <p className="mt-2 text-sm text-muted">CSV or TSV.</p>
         <label className="mt-4 inline-block text-left text-sm">
           Treat file as
           <select className="field mt-1" value={kind} onChange={(event) => setKind(event.target.value)}>
@@ -196,27 +176,7 @@ export default function DatasetsPage() {
         ))}
       </section>
 
-      {files.length === 0 && <p className="text-sm text-muted">No datasets yet. Drop one file, or both together.</p>}
-
-      {files.length > 1 && (
-        <section className="panel p-4">
-          <p className="font-medium tracking-tight">
-            {files.length === 2 ? "Both files are on the desk." : `${files.length} files are on the desk.`}
-          </p>
-          <p className="mt-1 text-sm text-muted">Open a records page and leave it on Both files, or click one filename.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link className="btn-primary" href="/invoices">
-              Invoices
-            </Link>
-            <Link className="btn-ghost" href="/customers">
-              Customers
-            </Link>
-            <Link className="btn-ghost" href="/appointments">
-              Bookings
-            </Link>
-          </div>
-        </section>
-      )}
+      {files.length === 0 && <p className="text-sm text-muted">No datasets yet. Drop a file above.</p>}
 
       {files.length > 0 && (
         <section className="panel space-y-3 p-4">

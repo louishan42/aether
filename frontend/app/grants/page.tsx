@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
+import { DatasetFilter } from "../../components/DatasetFilter";
 
 type Grant = {
   id: string;
@@ -59,6 +60,7 @@ export default function GrantsPage() {
           </button>
         }
       />
+      <DatasetFilter />
       {!profileReady && (
         <p className="panel p-4 text-sm">
           Set industry in{" "}

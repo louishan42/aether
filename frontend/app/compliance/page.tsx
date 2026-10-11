@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
+import { DatasetFilter } from "../../components/DatasetFilter";
 
 type Requirement = {
   id: string;
@@ -54,6 +55,7 @@ export default function CompliancePage() {
           </button>
         }
       />
+      <DatasetFilter />
       {message && <p className="text-sm">{message}</p>}
       <p className="text-sm text-muted">{gaps.length} open</p>
       <div className="space-y-3">

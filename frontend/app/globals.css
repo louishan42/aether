@@ -342,24 +342,21 @@ body {
   padding-right: 0.25rem;
 }
 
-.file-how {
-  display: grid;
-  gap: 0.75rem;
+.dset-bar {
+  border: 1px solid #1a1714;
+  background: linear-gradient(180deg, #faf8ff 0%, #ffffff 100%);
+  padding: 0.9rem 1rem 1rem;
 }
 
-@media (min-width: 800px) {
-  .file-how {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
+.dset-bar-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
 }
 
-.file-how article {
-  border: 1px solid #e9e2f8;
-  background: #ffffff;
-  padding: 1rem 1.1rem 1.05rem;
-}
-
-.file-how article > p:first-child {
+.dset-kicker {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -367,17 +364,44 @@ body {
   color: #6d28d9;
 }
 
-.file-how h2 {
-  margin-top: 0.35rem;
+.dset-bar-top strong {
   font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
-.file-how article p:last-child {
-  margin-top: 0.35rem;
-  font-size: 0.9rem;
-  color: #4c3d66;
+.dset-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.dset-pill {
+  min-height: 40px;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #ddd6fe;
+  background: #ffffff;
+  color: #1e1233;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.dset-pill.on {
+  background: #3b0764;
+  border-color: #3b0764;
+  color: #ffffff;
+}
+
+.dset-pill.on.all {
+  background: #0d9488;
+  border-color: #0d9488;
+}
+
+.dset-search {
+  min-height: 40px;
+  min-width: 10rem;
+  border: 1px solid #ddd6fe;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
 }
 
 .about-card {

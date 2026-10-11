@@ -5,6 +5,9 @@ import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import type { AgentId, Draft } from "../../lib/types";
 import { useReload } from "../../lib/useReload";
+import { DatasetFilter } from "../../components/DatasetFilter";
+import { rowsForView } from "../../lib/datasets";
+import { useFileView } from "../../lib/fileView";
 
 const filters: (AgentId | "all")[] = ["all", "invoice", "grant", "customer", "compliance", "appointment"];
 
@@ -17,6 +20,7 @@ const executeLabel: Record<AgentId, string> = {
 };
 
 export default function ApprovalsPage() {
+  const { view } = useFileView();
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [filter, setFilter] = useState<AgentId | "all">("all");
   const [message, setMessage] = useState("");
@@ -29,10 +33,19 @@ export default function ApprovalsPage() {
 
   useReload(load, setMessage);
 
-  const visible = useMemo(
-    () => (filter === "all" ? drafts : drafts.filter((draft) => draft.agent === filter)),
-    [drafts, filter],
-  );
+  const visible = useMemo(() => {
+    const byFile = drafts.filter((draft) => {
+      const sid =
+        draft.invoice?.sourceImportId ??
+        (draft.customer as { sourceImportId?: string } | undefined)?.sourceImportId ??
+        (draft.appointment as { sourceImportId?: string } | undefined)?.sourceImportId ??
+        null;
+      if (view !== "all" && (draft.agent === "grant" || draft.agent === "compliance")) return false;
+      if (view === "all") return true;
+      return rowsForView([{ sourceImportId: sid }], view).length > 0;
+    });
+    return filter === "all" ? byFile : byFile.filter((draft) => draft.agent === filter);
+  }, [drafts, filter, view]);
 
   return (
     <div className="space-y-6">
@@ -40,6 +53,7 @@ export default function ApprovalsPage() {
         eyebrow="Operations"
         title="Approvals"
       />
+      <DatasetFilter />
       <div className="flex flex-wrap gap-2">
         {filters.map((item) => (
           <button

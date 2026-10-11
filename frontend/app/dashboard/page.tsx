@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import type { Stats } from "../../lib/types";
 import { useReload } from "../../lib/useReload";
+import { DatasetFilter } from "../../components/DatasetFilter";
+import { useFileView, viewToQuery } from "../../lib/fileView";
 
 const hrefs: Record<string, string> = {
   invoice: "/invoices",
@@ -35,6 +37,7 @@ function Metric({ label, value }: { label: string; value: number }) {
 }
 
 export default function DashboardPage() {
+  const { view } = useFileView();
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,7 +45,7 @@ export default function DashboardPage() {
 
   async function load() {
     try {
-      setStats(await api.stats());
+      setStats(await api.stats(viewToQuery(view)));
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "API is not running");
@@ -50,6 +53,10 @@ export default function DashboardPage() {
   }
 
   useReload(load, setError);
+
+  useEffect(() => {
+    void load();
+  }, [view]);
 
   useEffect(() => {
     const tick = () =>
@@ -105,6 +112,8 @@ export default function DashboardPage() {
       </div>
 
       {error && <p className="text-sm text-red-700">{error}</p>}
+
+      <DatasetFilter />
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Metric label="Waiting to send" value={totals?.pendingApprovals ?? 0} />
