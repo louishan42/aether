@@ -7,6 +7,7 @@ import agentRoutes from "./routes/agent.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import workspaceRoutes from "./routes/workspace.js";
 import chatRoutes from "./routes/chat.js";
+import { syncDeskFromDatasets } from "./services/ingest.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
@@ -42,6 +43,21 @@ app.use((err: { status?: number; type?: string }, _req: express.Request, res: ex
   next(err);
 });
 app.use(tenantContext);
+app.use((req, _res, next) => {
+  if (!req.path.startsWith("/api")) {
+    next();
+    return;
+  }
+  const changed = syncDeskFromDatasets();
+  if (!changed) {
+    next();
+    return;
+  }
+  import("./services/persist.js")
+    .then(({ saveSnapshot }) => saveSnapshot())
+    .catch(() => undefined)
+    .finally(() => next());
+});
 
 app.get("/", (_req, res) => {
   res.json({

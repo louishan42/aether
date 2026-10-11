@@ -11,6 +11,18 @@ describe("csv ingest", () => {
     expect(customers.map((row) => row.email)).toEqual(["new@example.com"]);
   });
 
+  it("maps payroll names onto invoices instead of keeping demo names", () => {
+    const businessId = `biz-${crypto.randomUUID()}`;
+    ingestCsv(
+      businessId,
+      "pay_date,employee_id,employee_name,role,type,amount,account\n2022-02-15,E001,Alice Smith,Barista,Employee Pay,1865,Checking\n",
+      "gusto_payroll.csv",
+    );
+    const invoices = getStore().invoices.filter((row) => row.businessId === businessId);
+    expect(invoices.some((row) => row.customerName === "Alice Smith")).toBe(true);
+    expect(invoices.some((row) => row.customerName.includes("Tan Bakery"))).toBe(false);
+  });
+
   it("deletes every customer row when the customer file is removed", () => {
     const businessId = `biz-${crypto.randomUUID()}`;
     const result = ingestCsv(businessId, "name,email\nAcme,acme@example.com\n", "customers.csv", "customers");

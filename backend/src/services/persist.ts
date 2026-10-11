@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { prisma } from "./db.js";
 import { addLog, getStore, setPolicy, setProfile } from "./store.js";
-import { ingestCsv, pruneOrphanDrafts, reconcileToDatasets, rematerializeFromFiles } from "./ingest.js";
+import { ingestCsv, pruneOrphanDrafts, syncDeskFromDatasets } from "./ingest.js";
 import type { AgentDraft, Appointment, Invoice } from "../types.js";
 
 const DEMO_BUSINESS_ID = process.env.DEMO_BUSINESS_ID ?? "demo-business";
@@ -82,10 +82,7 @@ export async function loadSnapshot() {
   }));
   for (const profile of profiles) store.profiles[profile.businessId] = profile;
   for (const policy of policies) store.policies[policy.businessId] = policy;
-  const rebuilt = rematerializeFromFiles();
-  const reconciled = reconcileToDatasets();
-  const pruned = pruneOrphanDrafts();
-  if (rebuilt || reconciled || pruned) await saveSnapshot();
+  if (syncDeskFromDatasets() || pruneOrphanDrafts()) await saveSnapshot();
 }
 
 export async function saveSnapshot() {
