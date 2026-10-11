@@ -222,12 +222,21 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
-  text-decoration: none;
+  padding: 0.15rem 0.1rem;
+  cursor: pointer;
+  text-decoration: none !important;
 }
 
-.logo-link:hover .logo-word {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.logo-link:hover,
+.logo-link:focus,
+.logo-link:hover .logo-word,
+.logo-link:focus .logo-word {
+  text-decoration: none !important;
+}
+
+.logo-mark,
+.logo-word {
+  pointer-events: none;
 }
 
 .logo-mark {
@@ -239,6 +248,7 @@ body {
   font-weight: 700;
   letter-spacing: -0.03em;
   color: #ffffff;
+  text-decoration: none;
 }
 
 .app-sidebar {
@@ -572,12 +582,16 @@ body {
   color: #f4efe8;
 }
 
-.landing-shell.dark .logo-mark rect {
+.landing-shell.dark .logo-mark .tile {
   fill: #2a2622;
   stroke: #d7d0c6;
 }
 
-.landing-shell.dark .logo-mark text {
+.landing-shell.dark .logo-mark .ink-stroke {
+  stroke: #f4efe8;
+}
+
+.landing-shell.dark .logo-mark .ink-fill {
   fill: #f4efe8;
 }
 
