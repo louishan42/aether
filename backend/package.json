@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "export DATABASE_URL=\"${DATABASE_URL:-file:./prisma/aether.db}\" && prisma db push && tsx watch src/index.ts",
-    "start": "export DATABASE_URL=\"${DATABASE_URL:-file:./prisma/aether.db}\" && prisma db push && tsx src/index.ts",
+    "dev": "prisma db push && tsx watch src/index.ts",
+    "start": "prisma db push && tsx src/index.ts",
     "postinstall": "prisma generate",
     "test": "vitest run"
   },

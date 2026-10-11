@@ -78,7 +78,7 @@ export default function DatasetsPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Datasets"
-        description="Drop CSV files here. Imported rows stay on this page so you can check them. Records are saved in the SQLite database."
+        description="Drop CSV files here. Imported rows stay on this page so you can check them. Records are saved in Supabase Postgres."
       />
       {message && <p className="text-sm text-red-800">{message}</p>}
 

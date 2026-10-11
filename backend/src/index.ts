@@ -42,7 +42,7 @@ app.get("/", (_req, res) => {
 });
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, service: "aether", dataset: "sqlite" });
+  res.json({ ok: true, service: "aether", dataset: "supabase" });
 });
 
 app.use("/api/invoices", invoiceRoutes);
