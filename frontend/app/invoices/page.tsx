@@ -1,22 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import type { Invoice } from "../../lib/types";
 import { useReload } from "../../lib/useReload";
 import { DatasetFilter } from "../../components/DatasetFilter";
 import { CustomFilePreview } from "../../components/CustomFilePreview";
-import { TablePager } from "../../components/TablePager";
-import { listedDatasets, pageRows, rowsForView, type DatasetFile } from "../../lib/datasets";
+import { listedDatasets, rowsForView, type DatasetFile } from "../../lib/datasets";
 import { useFileView } from "../../lib/fileView";
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [overdue, setOverdue] = useState<Invoice[]>([]);
   const { view: fileId } = useFileView();
   const [files, setFiles] = useState<DatasetFile[]>([]);
-  const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({
     invoiceNumber: "",
@@ -28,20 +25,14 @@ export default function InvoicesPage() {
   });
 
   async function load() {
-    const [all, due, records] = await Promise.all([api.invoices(), api.overdue(), api.records()]);
+    const [all, records] = await Promise.all([api.invoices(), api.records()]);
     setInvoices(all.invoices);
-    setOverdue(due.invoices);
     setFiles(listedDatasets(records));
   }
 
   const visible = rowsForView(invoices, fileId, files);
-  const visibleOverdue = rowsForView(overdue, fileId, files);
-  const paged = pageRows(visible, page);
 
   useReload(load, setMessage);
-  useEffect(() => {
-    setPage(1);
-  }, [fileId]);
 
   return (
     <div className="space-y-6">
@@ -112,7 +103,7 @@ export default function InvoicesPage() {
                 </td>
               </tr>
             )}
-            {paged.map((invoice) => (
+            {visible.map((invoice) => (
               <tr key={invoice.id} className="border-t border-edge">
                 <td className="px-4 py-3">{invoice.invoiceNumber}</td>
                 <td className="px-4 py-3">
@@ -126,7 +117,6 @@ export default function InvoicesPage() {
             ))}
           </tbody>
         </table>
-        <TablePager total={visible.length} page={page} onPage={setPage} />
       </section>
     </div>
   );

@@ -9,7 +9,6 @@ import { chartsFromStats } from "../../lib/chartsFromStats";
 import { exportLockedReport } from "../../lib/exportReport";
 import { PageHeader } from "../../components/PageHeader";
 import { DatasetFilter } from "../../components/DatasetFilter";
-import { CustomFilePreview } from "../../components/CustomFilePreview";
 import { useFileView, viewToQuery } from "../../lib/fileView";
 import { periodRange, type Period } from "../../lib/period";
 
@@ -95,7 +94,6 @@ export default function AnalysisPage() {
       </div>
 
       <DatasetFilter />
-      <CustomFilePreview />
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[

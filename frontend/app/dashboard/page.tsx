@@ -6,7 +6,6 @@ import { api } from "../../lib/api";
 import type { Stats } from "../../lib/types";
 import { useReload } from "../../lib/useReload";
 import { DatasetFilter } from "../../components/DatasetFilter";
-import { CustomFilePreview } from "../../components/CustomFilePreview";
 import { useFileView, viewToQuery } from "../../lib/fileView";
 
 const hrefs: Record<string, string> = {
@@ -124,7 +123,6 @@ export default function DashboardPage() {
       {error && <p className="text-sm text-red-700">{error}</p>}
 
       <DatasetFilter />
-      <CustomFilePreview />
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Metric

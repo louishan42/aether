@@ -1,20 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
 import { DatasetFilter } from "../../components/DatasetFilter";
 import { CustomFilePreview } from "../../components/CustomFilePreview";
-import { TablePager } from "../../components/TablePager";
-import { listedDatasets, pageRows, rowsForView, type DatasetFile } from "../../lib/datasets";
+import { listedDatasets, rowsForView, type DatasetFile } from "../../lib/datasets";
 import { useFileView } from "../../lib/fileView";
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<{ id: string; customerName: string; customerEmail: string; startsAt: string; status: string; sourceImportId?: string | null }[]>([]);
   const { view: fileId } = useFileView();
   const [files, setFiles] = useState<DatasetFile[]>([]);
-  const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({ customerName: "", customerEmail: "", startsAt: "" });
 
@@ -25,12 +23,8 @@ export default function AppointmentsPage() {
   }
 
   const visible = rowsForView(appointments, fileId, files);
-  const paged = pageRows(visible, page);
 
   useReload(load, setMessage);
-  useEffect(() => {
-    setPage(1);
-  }, [fileId]);
 
   return (
     <div className="space-y-6">
@@ -108,7 +102,7 @@ export default function AppointmentsPage() {
                 </td>
               </tr>
             )}
-            {paged.map((row) => (
+            {visible.map((row) => (
               <tr key={row.id} className="border-t border-edge">
                 <td className="px-4 py-3">
                   {row.customerName}
@@ -133,7 +127,6 @@ export default function AppointmentsPage() {
             ))}
           </tbody>
         </table>
-        <TablePager total={visible.length} page={page} onPage={setPage} />
       </section>
     </div>
   );

@@ -16,9 +16,11 @@ export function listedDatasets(records: { datasets?: DatasetFile[]; files?: Data
   return records.datasets?.length ? records.datasets : (records.files ?? []);
 }
 
-export function filesForView(files: DatasetFile[], view: FileView) {
+export function filesForView(files: DatasetFile[], view: FileView, kinds?: string[]) {
   if (view === "manual") return [];
-  if (view === "all") return files.filter((file) => file.kind !== "custom");
+  if (view === "all") {
+    return files.filter((file) => file.kind !== "custom" && (!kinds?.length || kinds.includes(file.kind)));
+  }
   const ids = new Set(Array.isArray(view) ? view : [view]);
   return files.filter((file) => ids.has(file.id));
 }
