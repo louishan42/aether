@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { TenantRequest } from "../middleware/tenant.js";
 import { getPolicy, getStore, setPolicy } from "../services/store.js";
-import { isEligible } from "../services/overdue.js";
+import { daysOverdue, isEligible } from "../services/overdue.js";
 import { complianceItems, enrichProfile, grantMatches } from "../services/profile.js";
 import { draftBuckets, draftInTenant } from "../services/drafts.js";
 import { z } from "zod";
@@ -51,6 +51,11 @@ router.get("/stats", (req, res) => {
       inRange(invoice.dueDate, from, to),
   );
   const overdue = invoices.filter((invoice) => isEligible(invoice, policy).ok);
+  const outstanding = invoices.filter((invoice) => invoice.status === "unpaid" || invoice.status === "disputed");
+  const overdueOver30 = invoices.filter(
+    (invoice) => (invoice.status === "unpaid" || invoice.status === "disputed") && daysOverdue(invoice) > 30,
+  );
+  const paidInFile = invoices.filter((invoice) => invoice.status === "paid");
   const customers = store.customers.filter(
     (row) =>
       row.businessId === businessId &&
@@ -82,6 +87,7 @@ router.get("/stats", (req, res) => {
   });
   const pendingSend = tenantDrafts.filter((draft) => draft.status === "pending" && ["invoice", "customer", "appointment"].includes(draft.agent)).length;
   const pendingChecklists = tenantDrafts.filter((draft) => draft.status === "pending" && ["grant", "compliance"].includes(draft.agent)).length;
+  const pendingDrafts = pendingSend + pendingChecklists;
   const invoiceFiles = files.filter((file) => file.kind === "invoices").length;
   const customerFiles = files.filter((file) => file.kind === "customers").length;
   const appointmentFiles = files.filter((file) => file.kind === "appointments").length;
@@ -101,6 +107,11 @@ router.get("/stats", (req, res) => {
       invoices: invoices.length,
       overdue: overdue.length,
       overdueAmount: overdue.reduce((sum, invoice) => sum + invoice.amountSgd, 0),
+      outstandingAmount: outstanding.reduce((sum, invoice) => sum + invoice.amountSgd, 0),
+      overdueOver30: overdueOver30.length,
+      overdueOver30Amount: overdueOver30.reduce((sum, invoice) => sum + invoice.amountSgd, 0),
+      pendingDrafts,
+      paidInFileAmount: paidInFile.reduce((sum, invoice) => sum + invoice.amountSgd, 0),
       pendingApprovals: ids ? pendingSend : buckets.pendingSend,
       pendingChecklists: ids ? pendingChecklists : buckets.pendingChecklists,
       sent: buckets.sent,

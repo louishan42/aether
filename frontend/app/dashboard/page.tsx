@@ -24,15 +24,24 @@ const kindHref: Record<string, string> = {
   custom: "/datasets",
 };
 
-function Metric({ label, value }: { label: string; value: number }) {
-  const width = Math.min(100, 12 + value * 8);
+function money(value: number) {
+  return `S$${value.toLocaleString("en-SG", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
+function Metric({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+}) {
   return (
     <div className="panel relative overflow-hidden p-5">
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
-      <p className="mt-3 text-4xl font-semibold tracking-tight tabular-nums">{value}</p>
-      <div className="bar-track mt-4">
-        <div className="bar-fill" style={{ width: `${width}%` }} />
-      </div>
+      <p className="mt-3 text-3xl font-semibold tracking-tight tabular-nums md:text-4xl">{value}</p>
+      {hint ? <p className="mt-2 text-sm text-muted">{hint}</p> : null}
     </div>
   );
 }
@@ -116,6 +125,29 @@ export default function DashboardPage() {
 
       <DatasetFilter />
       <CustomFilePreview />
+
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Metric
+          label="Total outstanding (S$)"
+          value={money(totals?.outstandingAmount ?? 0)}
+          hint="Unpaid and disputed invoices in the current files"
+        />
+        <Metric
+          label="Overdue >30 days"
+          value={totals?.overdueOver30 ?? 0}
+          hint={money(totals?.overdueOver30Amount ?? 0)}
+        />
+        <Metric
+          label="Drafts pending approval"
+          value={totals?.pendingDrafts ?? (totals?.pendingApprovals ?? 0) + (totals?.pendingChecklists ?? 0)}
+          hint="Collections, follow-ups, bookings, grants, compliance"
+        />
+        <Metric
+          label="Paid in file (S$)"
+          value={money(totals?.paidInFileAmount ?? 0)}
+          hint="Invoice status = paid. Not recovered-by-Aether cash flow"
+        />
+      </section>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Metric label="Waiting to send" value={totals?.pendingApprovals ?? 0} />

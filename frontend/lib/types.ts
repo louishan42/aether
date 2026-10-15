@@ -52,6 +52,11 @@ export type Stats = {
     invoices: number;
     overdue: number;
     overdueAmount: number;
+    outstandingAmount?: number;
+    overdueOver30?: number;
+    overdueOver30Amount?: number;
+    pendingDrafts?: number;
+    paidInFileAmount?: number;
     pendingApprovals: number;
     pendingChecklists?: number;
     sent: number;
