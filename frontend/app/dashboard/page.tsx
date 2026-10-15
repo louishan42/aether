@@ -192,7 +192,7 @@ export default function DashboardPage() {
         {files.length === 0 && <p className="mt-4 text-sm text-muted">No files.</p>}
         {files.length > 0 && (
           <ul className="mt-4 divide-y divide-edge">
-            {files.slice(0, 12).map((file) => (
+            {files.map((file) => (
               <li key={file.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
                 <Link href={kindHref[file.kind] ?? "/datasets"} className="font-medium hover:underline">
                   {file.filename}
@@ -203,15 +203,6 @@ export default function DashboardPage() {
               </li>
             ))}
           </ul>
-        )}
-        {files.length > 12 && (
-          <p className="mt-3 text-sm text-muted">
-            {files.length - 12} more on{" "}
-            <Link href="/datasets" className="accent-text font-semibold hover:underline">
-              Datasets
-            </Link>
-            .
-          </p>
         )}
       </section>
 

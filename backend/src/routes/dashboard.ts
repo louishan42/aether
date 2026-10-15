@@ -15,8 +15,7 @@ function parseFileIds(raw: unknown) {
   return new Set(text.split(",").filter(Boolean));
 }
 
-function inFiles(ids: Set<string> | null, sourceImportId: string | null | undefined, customIds: Set<string>) {
-  if (sourceImportId && customIds.has(sourceImportId) && !ids) return false;
+function inFiles(ids: Set<string> | null, sourceImportId: string | null | undefined) {
   if (!ids) return true;
   return Boolean(sourceImportId && ids.has(sourceImportId));
 }
@@ -46,13 +45,10 @@ router.get("/stats", (req, res) => {
   const profile = enrichProfile(businessId);
   const ids = parseFileIds(req.query.files);
   const { from, to } = parseRange(req.query.from, req.query.to);
-  const customIds = new Set(
-    store.imports.filter((row) => row.businessId === businessId && row.kind === "custom").map((row) => row.id),
-  );
   const invoices = store.invoices.filter(
     (invoice) =>
       invoice.businessId === businessId &&
-      inFiles(ids, invoice.sourceImportId, customIds) &&
+      inFiles(ids, invoice.sourceImportId) &&
       inRange(invoice.dueDate, from, to),
   );
   const overdue = invoices.filter((invoice) => isEligible(invoice, policy).ok);
@@ -64,20 +60,17 @@ router.get("/stats", (req, res) => {
   const customers = store.customers.filter(
     (row) =>
       row.businessId === businessId &&
-      inFiles(ids, row.sourceImportId, customIds) &&
+      inFiles(ids, row.sourceImportId) &&
       inRange(row.lastContactAt, from, to),
   );
   const appointments = store.appointments.filter(
     (row) =>
       row.businessId === businessId &&
-      inFiles(ids, row.sourceImportId, customIds) &&
+      inFiles(ids, row.sourceImportId) &&
       inRange(row.startsAt, from, to),
   );
   const files = store.imports.filter(
-    (row) =>
-      row.businessId === businessId &&
-      (ids ? ids.has(row.id) : row.kind !== "custom") &&
-      inRange(row.importedAt, from, to),
+    (row) => row.businessId === businessId && (!ids || ids.has(row.id)) && inRange(row.importedAt, from, to),
   );
   const grantRows = grantMatches(businessId);
   const grants = grantRows.filter((grant) => grant.match.ok);
@@ -90,7 +83,7 @@ router.get("/stats", (req, res) => {
     const invoice = store.invoices.find((row) => row.id === draft.recordId);
     const customer = store.customers.find((row) => row.id === draft.recordId);
     const appointment = store.appointments.find((row) => row.id === draft.recordId);
-    return inFiles(ids, invoice?.sourceImportId ?? customer?.sourceImportId ?? appointment?.sourceImportId, customIds);
+    return inFiles(ids, invoice?.sourceImportId ?? customer?.sourceImportId ?? appointment?.sourceImportId);
   });
   const pendingSend = tenantDrafts.filter((draft) => draft.status === "pending" && ["invoice", "customer", "appointment"].includes(draft.agent)).length;
   const pendingChecklists = tenantDrafts.filter((draft) => draft.status === "pending" && ["grant", "compliance"].includes(draft.agent)).length;
