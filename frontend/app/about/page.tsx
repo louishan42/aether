@@ -108,20 +108,6 @@ export default function AboutPage() {
         ))}
       </section>
 
-      <section className="panel flex flex-col items-start gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-7">
-        <div>
-          <p className="accent-text text-[11px] font-semibold uppercase tracking-[0.18em]">Live site</p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight">Scan to open Aether</h2>
-          <p className="mt-2 text-sm text-muted">https://aether-eight-ecru.vercel.app</p>
-          <a className="btn-ghost mt-4 inline-block" href="/aether-site-qr.png" download="aether-site-qr.png">
-            Download QR
-          </a>
-        </div>
-        <div className="about-qr bg-white p-3" title="https://aether-eight-ecru.vercel.app">
-          <QRCodeSVG value="https://aether-eight-ecru.vercel.app" size={168} bgColor="#ffffff" fgColor="#3b0764" level="M" />
-        </div>
-      </section>
-
       <section className="panel p-5 md:p-7">
         <p className="accent-text text-[11px] font-semibold uppercase tracking-[0.18em]">Tech stack</p>
         <div className="mt-4 flex flex-wrap gap-3">
