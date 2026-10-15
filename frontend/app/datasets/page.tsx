@@ -5,6 +5,7 @@ import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
 import { DEMO_SME_PROFILE } from "../../lib/demoProfile";
+import { DatasetTable } from "../../components/DatasetTable";
 
 type FileRow = {
   id: string;
@@ -25,7 +26,6 @@ export default function DatasetsPage() {
   const [kind, setKind] = useState("auto");
   const [query, setQuery] = useState("");
   const [kindFilter, setKindFilter] = useState("all");
-  const [openId, setOpenId] = useState<string | null>(null);
   const [shown, setShown] = useState(8);
 
   async function load() {
@@ -255,76 +255,34 @@ export default function DatasetsPage() {
         </section>
       )}
 
-      {filteredFiles.map((file) => {
-        const headers = file.headers?.length ? file.headers : Object.keys(file.rows?.[0] ?? {});
-        const open = files.length <= 4 || openId === file.id;
-        return (
-          <section key={file.id} className="panel overflow-x-auto p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <button type="button" className="text-left" onClick={() => setOpenId(open ? null : file.id)}>
-                <h2 className="font-medium tracking-tight">{file.filename}</h2>
-                <p className="mt-1 text-sm text-muted">
-                  {file.kind} · {file.rowCount} rows · {new Date(file.importedAt).toLocaleString()}
-                  {file.kind === "custom" ? " · stored only" : ""}
-                  {files.length > 4 ? (open ? " · hide preview" : " · show preview") : ""}
-                </p>
-              </button>
-              <button
-                className="btn-ghost"
-                disabled={busy}
-                onClick={async () => {
-                  if (!window.confirm(`Delete ${file.filename}?`)) return;
-                  setBusy(true);
-                  try {
-                    const result = await api.deleteDataset(file.id);
-                    await load();
-                    setMessage(
-                      `Deleted ${result.filename}. Removed invoices ${result.removed.invoices}, customers ${result.removed.customers}, bookings ${result.removed.appointments}.`,
-                    );
-                  } catch (err) {
-                    setMessage(err instanceof Error ? err.message : "Delete failed");
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              >
-                Delete
-              </button>
-            </div>
-            {open && (
-            <table className="mt-3 w-full min-w-[20rem] text-left text-sm">
-              <thead>
-                <tr className="text-[11px] uppercase tracking-[0.14em] text-muted">
-                  {headers.map((header) => (
-                    <th key={header} className="py-2 pr-3">
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(file.rows ?? []).length === 0 && (
-                  <tr>
-                    <td className="py-3 text-muted" colSpan={Math.max(headers.length, 1)}>
-                      No row preview.
-                    </td>
-                  </tr>
-                )}
-                {(file.rows ?? []).slice(0, 20).map((row, index) => (
-                  <tr key={`${file.id}-${index}`} className="border-t border-edge">
-                    {headers.map((header) => (
-                      <td key={header} className="py-2 pr-3">
-                        {row[header] ?? ""}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            )}
-          </section>
-        );
-      })}
+      {filteredFiles.map((file) => (
+        <div key={file.id} className="space-y-2">
+          <div className="flex justify-end">
+            <button
+              className="btn-ghost"
+              disabled={busy}
+              onClick={async () => {
+                if (!window.confirm(`Delete ${file.filename}?`)) return;
+                setBusy(true);
+                try {
+                  const result = await api.deleteDataset(file.id);
+                  await load();
+                  setMessage(
+                    `Deleted ${result.filename}. Removed invoices ${result.removed.invoices}, customers ${result.removed.customers}, bookings ${result.removed.appointments}.`,
+                  );
+                } catch (err) {
+                  setMessage(err instanceof Error ? err.message : "Delete failed");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Delete
+            </button>
+          </div>
+          <DatasetTable file={file} />
+        </div>
+      ))}
       {files.length > 0 && filteredCount === 0 && <p className="text-sm text-muted">No files match that search.</p>}
       {filteredCount > shown && (
         <button type="button" className="btn-ink" onClick={() => setShown((count) => count + 8)}>

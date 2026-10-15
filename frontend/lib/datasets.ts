@@ -4,6 +4,8 @@ export type DatasetFile = {
   kind: string;
   rowCount?: number;
   importedAt?: string;
+  headers?: string[];
+  rows?: Record<string, string>[];
 };
 
 export type FileView = "all" | "manual" | string | string[];
@@ -12,6 +14,12 @@ export const TABLE_PAGE = 40;
 
 export function listedDatasets(records: { datasets?: DatasetFile[]; files?: DatasetFile[] }) {
   return records.datasets?.length ? records.datasets : (records.files ?? []);
+}
+
+export function filesForView(files: DatasetFile[], view: FileView) {
+  if (view === "all" || view === "manual") return files;
+  const ids = new Set(Array.isArray(view) ? view : [view]);
+  return files.filter((file) => ids.has(file.id));
 }
 
 export function rowsForView<T extends { sourceImportId?: string | null }>(rows: T[], view: FileView) {

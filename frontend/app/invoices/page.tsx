@@ -6,6 +6,7 @@ import { PageHeader } from "../../components/PageHeader";
 import type { Invoice } from "../../lib/types";
 import { useReload } from "../../lib/useReload";
 import { DatasetFilter } from "../../components/DatasetFilter";
+import { CustomFilePreview } from "../../components/CustomFilePreview";
 import { TablePager } from "../../components/TablePager";
 import { listedDatasets, pageRows, rowsForView, type DatasetFile } from "../../lib/datasets";
 import { useFileView } from "../../lib/fileView";
@@ -90,6 +91,7 @@ export default function InvoicesPage() {
       </section>
 
       <DatasetFilter files={files} hasManual={invoices.some((row) => row.sourceImportId === "manual")} />
+      <CustomFilePreview />
 
       <section className="panel table-wrap">
         <table className="w-full min-w-[36rem] text-left text-sm">

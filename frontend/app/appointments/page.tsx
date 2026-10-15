@@ -5,6 +5,7 @@ import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
 import { DatasetFilter } from "../../components/DatasetFilter";
+import { CustomFilePreview } from "../../components/CustomFilePreview";
 import { TablePager } from "../../components/TablePager";
 import { listedDatasets, pageRows, rowsForView, type DatasetFile } from "../../lib/datasets";
 import { useFileView } from "../../lib/fileView";
@@ -87,6 +88,7 @@ export default function AppointmentsPage() {
       </section>
       {message && <p className="text-sm">{message}</p>}
       <DatasetFilter files={files} hasManual={appointments.some((row) => row.sourceImportId === "manual")} />
+      <CustomFilePreview />
 
       <section className="panel table-wrap">
         <table className="w-full min-w-[32rem] text-left text-sm">
