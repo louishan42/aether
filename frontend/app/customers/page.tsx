@@ -24,7 +24,7 @@ export default function CustomersPage() {
     setFiles(listedDatasets(records));
   }
 
-  const visible = rowsForView(customers, fileId);
+  const visible = rowsForView(customers, fileId, files);
   const paged = pageRows(visible, page);
 
   useReload(load, setMessage);

@@ -17,14 +17,20 @@ export function CustomFilePreview() {
       .catch(() => setFiles([]));
   }, [view]);
 
-  if (view === "all" || view === "manual") return null;
-  const custom = filesForView(files, view).filter((file) => file.kind === "custom");
-  if (!custom.length) return null;
+  if (view === "manual") return null;
+  const shown = filesForView(files, view);
+  if (!shown.length) return null;
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted">This file is stored as custom. Rows below. Not mapped to invoices, customers, or bookings.</p>
-      {custom.map((file) => (
+      {view === "all" ? (
+        <p className="text-sm text-muted">All desk files except custom (payroll / unmatched). Click a file name to view that file only.</p>
+      ) : shown.some((file) => file.kind === "custom") ? (
+        <p className="text-sm text-muted">Custom file. All rows below. Not mapped to invoices, customers, or bookings.</p>
+      ) : (
+        <p className="text-sm text-muted">Every row in the selected file.</p>
+      )}
+      {shown.map((file) => (
         <DatasetTable key={file.id} file={file} />
       ))}
     </div>

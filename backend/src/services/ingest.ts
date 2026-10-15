@@ -186,7 +186,15 @@ function applyMappedRows(businessId: string, kind: DetectedKind, rows: Record<st
     } else if (kind === "customers") {
       const customer = asCustomer(businessId, row, index);
       if (!customer) return;
-      if (store.customers.some((item) => item.businessId === businessId && item.email.toLowerCase() === customer.email.toLowerCase())) return;
+      const existing = store.customers.find((item) => item.businessId === businessId && item.email.toLowerCase() === customer.email.toLowerCase());
+      if (existing) {
+        existing.name = customer.name;
+        existing.lastContactAt = customer.lastContactAt ?? existing.lastContactAt;
+        existing.notes = customer.notes || existing.notes;
+        existing.sourceImportId = fileId;
+        mapped += 1;
+        return;
+      }
       customer.sourceImportId = fileId;
       store.customers.unshift(customer);
       mapped += 1;

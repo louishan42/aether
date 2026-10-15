@@ -34,8 +34,8 @@ export default function InvoicesPage() {
     setFiles(listedDatasets(records));
   }
 
-  const visible = rowsForView(invoices, fileId);
-  const visibleOverdue = rowsForView(overdue, fileId);
+  const visible = rowsForView(invoices, fileId, files);
+  const visibleOverdue = rowsForView(overdue, fileId, files);
   const paged = pageRows(visible, page);
 
   useReload(load, setMessage);

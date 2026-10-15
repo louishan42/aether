@@ -26,7 +26,7 @@ export default function DatasetsPage() {
   const [kind, setKind] = useState("auto");
   const [query, setQuery] = useState("");
   const [kindFilter, setKindFilter] = useState("all");
-  const [shown, setShown] = useState(8);
+  const [shown, setShown] = useState(Number.POSITIVE_INFINITY);
 
   async function load() {
     const data = await api.records();

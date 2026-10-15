@@ -24,7 +24,7 @@ export default function AppointmentsPage() {
     setFiles(listedDatasets(records));
   }
 
-  const visible = rowsForView(appointments, fileId);
+  const visible = rowsForView(appointments, fileId, files);
   const paged = pageRows(visible, page);
 
   useReload(load, setMessage);
