@@ -216,8 +216,36 @@ export default function DatasetsPage() {
           >
             Load demo customers & bookings
           </button>
+          <button
+            type="button"
+            className="btn-ink"
+            disabled={busy}
+            onClick={() =>
+              askConsent(async () => {
+                setBusy(true);
+                try {
+                  const res = await fetch("/warmup_test.csv");
+                  if (!res.ok) throw new Error("Could not load warmup_test.csv");
+                  const result = await importOne(await res.text(), "warmup_test.csv", "custom");
+                  await load();
+                  setMessage(
+                    `warmup_test.csv: ${result.stored} sample rows stored as custom. Use this to test the warning. Not real NRIC.`,
+                  );
+                } catch (err) {
+                  setMessage(err instanceof Error ? err.message : "Warmup load failed");
+                } finally {
+                  setBusy(false);
+                }
+              })
+            }
+          >
+            Load warmup test
+          </button>
           <a className="btn-ghost" href="/demo_data.csv" download="demo_data.csv">
             Download demo_data.csv
+          </a>
+          <a className="btn-ghost" href="/warmup_test.csv" download="warmup_test.csv">
+            Download warmup_test.csv
           </a>
           <label className="btn-ink inline-block cursor-pointer">
             {busy ? "Importing…" : "Choose files"}

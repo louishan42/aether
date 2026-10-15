@@ -1,0 +1,5 @@
+name,nric,email,phone,notes
+SAMPLE Tan Mei Ling,S0000001A,warmup.tan@example.invalid,+65 8000 0001,Warmup row only. Not a real NRIC.
+SAMPLE Lim Wei Jie,T0000002Z,warmup.lim@example.invalid,+65 8000 0002,Warmup row only. Not a real NRIC.
+SAMPLE Nur Aisyah,S0000003B,warmup.aisyah@example.invalid,+65 8000 0003,Warmup row only. Not a real NRIC.
+SAMPLE Raj Kumar,S0000004C,warmup.raj@example.invalid,+65 8000 0004,Warmup row only. Not a real NRIC.
