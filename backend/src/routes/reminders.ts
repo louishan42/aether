@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { TenantRequest } from "../middleware/tenant.js";
 import { addLog, getStore } from "../services/store.js";
+import { logDraftApproved } from "../services/actions.js";
 import { saveSnapshot } from "../services/persist.js";
 import { createTools } from "../../../agents/tools/index.js";
 import { runInvoiceAgent } from "../../../agents/runners/run.js";
@@ -27,13 +28,28 @@ router.post("/:id/approve", (req, res) => {
   if (!draftInTenant(businessId, draft.recordId, draft.agent)) return res.status(403).json({ error: "not in tenant" });
   const decision = req.body?.decision === "rejected" ? "rejected" : "approved";
   draft.status = decision;
-  addLog({
-    agent: draft.agent,
-    agentRunId: null,
-    invoiceId: draft.recordId,
-    action: decision === "approved" ? "approve_draft" : "reject_draft",
-    result: `${actorId} ${decision} ${draft.id}`,
-  });
+  if (decision === "approved") {
+    logDraftApproved({
+      businessId,
+      userId: actorId,
+      agent: draft.agent,
+      recordId: draft.recordId,
+      draftId: draft.id,
+      status: "approved",
+    });
+  } else {
+    addLog({
+      agent: draft.agent,
+      agentRunId: null,
+      invoiceId: draft.recordId,
+      action: "reject_draft",
+      eventType: "DRAFT_REJECTED",
+      userId: actorId,
+      businessId,
+      status: "rejected",
+      result: `${actorId} rejected ${draft.id}`,
+    });
+  }
   void saveSnapshot();
   res.json({ draft });
 });

@@ -71,6 +71,12 @@ export async function loadSnapshot() {
     ...row,
     timestamp: row.timestamp.toISOString(),
     agent: row.agent as (typeof store.logs)[number]["agent"],
+    eventType: row.eventType ?? row.action,
+    userId: row.userId ?? "",
+    businessId: row.businessId ?? "",
+    status: row.status ?? "",
+    sourceImportId: row.sourceImportId ?? null,
+    datasetName: row.datasetName ?? "",
   }));
   store.imports = imports.map((row) => ({
     id: row.id,
@@ -150,8 +156,19 @@ export async function saveSnapshot() {
     ops.push(
       prisma.actionLog.createMany({
         data: store.logs.map((row) => ({
-          ...row,
+          id: row.id,
+          agent: row.agent,
+          agentRunId: row.agentRunId,
+          invoiceId: row.invoiceId,
+          action: row.action,
+          result: row.result,
           timestamp: new Date(row.timestamp),
+          eventType: row.eventType ?? row.action,
+          userId: row.userId ?? "",
+          businessId: row.businessId ?? "",
+          status: row.status ?? "",
+          sourceImportId: row.sourceImportId ?? null,
+          datasetName: row.datasetName ?? "",
         })),
       }),
     );

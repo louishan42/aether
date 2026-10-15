@@ -10,6 +10,26 @@ import type { Appointment, FollowUpCustomer } from "../types.js";
 
 const router = Router();
 
+router.get("/audit", (req, res) => {
+  const { businessId } = req as TenantRequest;
+  const store = getStore();
+  const logs = store.logs.filter((log) => !log.businessId || log.businessId === businessId);
+  res.json({
+    logs: logs.map((log) => ({
+      id: log.id,
+      timestamp: log.timestamp,
+      eventType: log.eventType || log.action,
+      userId: log.userId || "",
+      businessId: log.businessId || businessId,
+      status: log.status || "",
+      sourceImportId: log.sourceImportId ?? null,
+      datasetName: log.datasetName || "",
+      agent: log.agent,
+      result: log.result,
+    })),
+  });
+});
+
 router.get("/records", (req, res) => {
   const { businessId } = req as TenantRequest;
   const store = getStore();

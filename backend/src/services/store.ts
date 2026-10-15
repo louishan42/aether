@@ -94,7 +94,16 @@ export function setProfile(profile: BusinessProfile) {
   return profile;
 }
 
-export function addLog(entry: Omit<ActionLog, "id" | "timestamp"> & { id?: string; timestamp?: string }) {
+export function addLog(entry: Omit<ActionLog, "id" | "timestamp" | "eventType" | "userId" | "businessId" | "status" | "sourceImportId" | "datasetName"> & {
+  id?: string;
+  timestamp?: string;
+  eventType?: string;
+  userId?: string;
+  businessId?: string;
+  status?: string;
+  sourceImportId?: string | null;
+  datasetName?: string;
+}) {
   const log: ActionLog = {
     id: entry.id ?? crypto.randomUUID(),
     timestamp: entry.timestamp ?? new Date().toISOString(),
@@ -103,6 +112,12 @@ export function addLog(entry: Omit<ActionLog, "id" | "timestamp"> & { id?: strin
     invoiceId: entry.invoiceId,
     action: entry.action,
     result: entry.result,
+    eventType: entry.eventType ?? entry.action,
+    userId: entry.userId ?? "",
+    businessId: entry.businessId ?? "",
+    status: entry.status ?? "",
+    sourceImportId: entry.sourceImportId ?? null,
+    datasetName: entry.datasetName ?? "",
   };
   getStore().logs.unshift(log);
   return log;

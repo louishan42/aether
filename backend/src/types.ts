@@ -78,6 +78,12 @@ export type ActionLog = {
   action: string;
   result: string;
   timestamp: string;
+  eventType: string;
+  userId: string;
+  businessId: string;
+  status: string;
+  sourceImportId: string | null;
+  datasetName: string;
 };
 
 export type ReminderPolicy = {

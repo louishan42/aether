@@ -58,13 +58,19 @@ model AgentDraft {
 }
 
 model ActionLog {
-  id         String   @id
-  agent      String
-  agentRunId String?
-  invoiceId  String?
-  action     String
-  result     String
-  timestamp  DateTime
+  id             String   @id
+  agent          String
+  agentRunId     String?
+  invoiceId      String?
+  action         String
+  result         String
+  timestamp      DateTime
+  eventType      String   @default("")
+  userId         String   @default("")
+  businessId     String   @default("")
+  status         String   @default("")
+  sourceImportId String?
+  datasetName    String   @default("")
 }
 
 model DatasetImport {

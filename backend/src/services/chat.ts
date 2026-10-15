@@ -5,6 +5,7 @@ import { isEligible } from "./overdue.js";
 import { saveSnapshot } from "./persist.js";
 import { draftBuckets, openDrafts } from "./drafts.js";
 import { addLog, getPolicy, getProfile, getStore } from "./store.js";
+import { logDraftApproved } from "./actions.js";
 import { groqReady, groqReply } from "./groq.js";
 
 export type ChatLink = { href: string; label: string };
@@ -60,7 +61,14 @@ export async function answerChat(businessId: string, raw: string): Promise<ChatR
       return { reply: `No pending draft for ${needle}. Run agents first, or check Approvals.`, links: [{ href: "/approvals", label: "Approvals" }] };
     }
     draft.status = "approved";
-    addLog({ agent: draft.agent, agentRunId: null, invoiceId: draft.recordId, action: "approve_draft", result: `chat approved ${draft.id}` });
+    logDraftApproved({
+      businessId,
+      userId: "demo-owner",
+      agent: draft.agent,
+      recordId: draft.recordId,
+      draftId: draft.id,
+      status: "approved",
+    });
     await saveSnapshot();
     return { reply: `Approved: ${draft.subject}. On Approvals, tap send to finish.`, links: [{ href: "/approvals", label: "Approvals" }] };
   }

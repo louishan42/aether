@@ -49,6 +49,10 @@ export const api = {
     request(`/api/reminders/${id}/approve`, { method: "POST", body: JSON.stringify({ decision }) }),
   send: (id: string) => request<{ detail: string }>(`/api/reminders/${id}/send`, { method: "POST" }),
   activity: () => request<{ logs: { id: string; action: string; result: string; timestamp: string }[] }>("/api/agent/activity"),
+  audit: () =>
+    request<{
+      logs: import("./actions").AuditEntry[];
+    }>("/api/workspace/audit"),
   savePolicy: (policy: import("./types").Stats["policy"]) =>
     request<{ policy: import("./types").Stats["policy"] }>("/api/dashboard/policy", { method: "POST", body: JSON.stringify(policy) }),
   profile: () => request<{ profile: import("./types").BusinessProfile }>("/api/workspace/profile"),

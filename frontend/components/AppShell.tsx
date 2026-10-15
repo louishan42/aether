@@ -30,6 +30,7 @@ const groups = [
     label: "Workspace",
     items: [
       { href: "/datasets", label: "Datasets" },
+      { href: "/audit", label: "Audit" },
       { href: "/about", label: "About Us" },
       { href: "/settings", label: "Settings" },
     ],
