@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/PageHeader";
 import { useReload } from "../../lib/useReload";
 import { DEMO_SME_PROFILE } from "../../lib/demoProfile";
 import { DatasetTable } from "../../components/DatasetTable";
+import { DatasetConsentModal } from "../../components/DatasetConsentModal";
 
 type FileRow = {
   id: string;
@@ -27,6 +28,29 @@ export default function DatasetsPage() {
   const [query, setQuery] = useState("");
   const [kindFilter, setKindFilter] = useState("all");
   const [shown, setShown] = useState(Number.POSITIVE_INFINITY);
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [understood, setUnderstood] = useState(false);
+  const pendingUpload = useRef<null | (() => Promise<void>)>(null);
+
+  function askConsent(run: () => Promise<void>) {
+    pendingUpload.current = run;
+    setUnderstood(false);
+    setConsentOpen(true);
+  }
+
+  function declineConsent() {
+    pendingUpload.current = null;
+    setUnderstood(false);
+    setConsentOpen(false);
+    setBusy(false);
+  }
+
+  async function approveConsent() {
+    const run = pendingUpload.current;
+    pendingUpload.current = null;
+    setConsentOpen(false);
+    if (run) await run();
+  }
 
   async function load() {
     const data = await api.records();
@@ -87,7 +111,25 @@ export default function DatasetsPage() {
         eyebrow="Workspace"
         title="Datasets"
       />
+      <div className="flex flex-wrap gap-2">
+        <span className="data-badge warn">Storage is not permanent</span>
+        <span className="data-badge">You Control Your Data</span>
+        <span className="data-badge">Zero Data Monetization</span>
+        <span className="data-badge">We do not sell datasets</span>
+      </div>
+      <p className="text-sm text-muted">
+        Files live on this demo desk only. They are not an archive, and they are not sold or used as a data product.
+        Delete a file below to remove its rows from invoices, customers, and bookings.
+      </p>
       {message && <p className="text-sm">{message}</p>}
+      <DatasetConsentModal
+        open={consentOpen}
+        busy={busy}
+        understood={understood}
+        onUnderstood={setUnderstood}
+        onApprove={() => void approveConsent()}
+        onDecline={declineConsent}
+      />
 
       <section
         className={`panel drop-zone p-8 text-center ${active ? "active" : ""}`}
@@ -96,10 +138,11 @@ export default function DatasetsPage() {
           setActive(true);
         }}
         onDragLeave={() => setActive(false)}
-        onDrop={async (event) => {
+        onDrop={(event) => {
           event.preventDefault();
           setActive(false);
-          await handleFiles(event.dataTransfer.files);
+          const list = Array.from(event.dataTransfer.files);
+          askConsent(() => handleFiles(list));
         }}
       >
         <p className="text-lg font-semibold tracking-tight">Drop any dataset here</p>
@@ -119,24 +162,26 @@ export default function DatasetsPage() {
             type="button"
             className="btn-primary"
             disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                const res = await fetch("/demo_data.csv");
-                if (!res.ok) throw new Error("Could not load demo_data.csv");
-                const csv = await res.text();
-                const result = await importOne(csv, "demo_data.csv", "invoices");
-                await api.saveProfile(DEMO_SME_PROFILE);
-                await load();
-                setMessage(
-                  `demo_data.csv: treated as ${result.kind} (${result.stored} rows, ${result.mapped} matched). Open Invoices.`,
-                );
-              } catch (err) {
-                setMessage(err instanceof Error ? err.message : "Demo load failed");
-              } finally {
-                setBusy(false);
-              }
-            }}
+            onClick={() =>
+              askConsent(async () => {
+                setBusy(true);
+                try {
+                  const res = await fetch("/demo_data.csv");
+                  if (!res.ok) throw new Error("Could not load demo_data.csv");
+                  const csv = await res.text();
+                  const result = await importOne(csv, "demo_data.csv", "invoices");
+                  await api.saveProfile(DEMO_SME_PROFILE);
+                  await load();
+                  setMessage(
+                    `demo_data.csv: treated as ${result.kind} (${result.stored} rows, ${result.mapped} matched). Open Invoices.`,
+                  );
+                } catch (err) {
+                  setMessage(err instanceof Error ? err.message : "Demo load failed");
+                } finally {
+                  setBusy(false);
+                }
+              })
+            }
           >
             {busy ? "Importing…" : "Load demo_data"}
           </button>
@@ -144,28 +189,30 @@ export default function DatasetsPage() {
             type="button"
             className="btn-primary"
             disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                const notes: string[] = [];
-                for (const [path, name, asKind] of [
-                  ["/demo_customers.csv", "demo_customers.csv", "customers"],
-                  ["/demo_bookings.csv", "demo_bookings.csv", "appointments"],
-                ] as const) {
-                  const res = await fetch(path);
-                  if (!res.ok) throw new Error(`Could not load ${name}`);
-                  const result = await importOne(await res.text(), name, asKind);
-                  notes.push(`${name}: ${result.mapped} ${result.kind}`);
+            onClick={() =>
+              askConsent(async () => {
+                setBusy(true);
+                try {
+                  const notes: string[] = [];
+                  for (const [path, name, asKind] of [
+                    ["/demo_customers.csv", "demo_customers.csv", "customers"],
+                    ["/demo_bookings.csv", "demo_bookings.csv", "appointments"],
+                  ] as const) {
+                    const res = await fetch(path);
+                    if (!res.ok) throw new Error(`Could not load ${name}`);
+                    const result = await importOne(await res.text(), name, asKind);
+                    notes.push(`${name}: ${result.mapped} ${result.kind}`);
+                  }
+                  await api.saveProfile(DEMO_SME_PROFILE);
+                  await load();
+                  setMessage(`${notes.join(" · ")}. Open Customers and Bookings.`);
+                } catch (err) {
+                  setMessage(err instanceof Error ? err.message : "Demo load failed");
+                } finally {
+                  setBusy(false);
                 }
-                await api.saveProfile(DEMO_SME_PROFILE);
-                await load();
-                setMessage(`${notes.join(" · ")}. Open Customers and Bookings.`);
-              } catch (err) {
-                setMessage(err instanceof Error ? err.message : "Demo load failed");
-              } finally {
-                setBusy(false);
-              }
-            }}
+              })
+            }
           >
             Load demo customers & bookings
           </button>
@@ -180,9 +227,10 @@ export default function DatasetsPage() {
               multiple
               className="hidden"
               disabled={busy}
-              onChange={async (event) => {
-                if (event.target.files) await handleFiles(event.target.files);
+              onChange={(event) => {
+                const list = event.target.files ? Array.from(event.target.files) : [];
                 event.target.value = "";
+                if (list.length) askConsent(() => handleFiles(list));
               }}
             />
           </label>
@@ -200,21 +248,24 @@ export default function DatasetsPage() {
         <button
           className="btn-ink mt-3"
           disabled={busy}
-          onClick={async () => {
+          onClick={() => {
             if (!paste.trim()) return;
-            setBusy(true);
-            try {
-              const result = await importOne(paste, "pasted.csv", kind);
-              setPaste("");
-              await load();
-              setMessage(
-                `Pasted as ${result.kind} (${result.stored} rows, ${result.mapped} matched). ${result.reason ?? ""}`,
-              );
-            } catch (err) {
-              setMessage(err instanceof Error ? err.message : "Import failed");
-            } finally {
-              setBusy(false);
-            }
+            const rows = paste;
+            askConsent(async () => {
+              setBusy(true);
+              try {
+                const result = await importOne(rows, "pasted.csv", kind);
+                setPaste("");
+                await load();
+                setMessage(
+                  `Pasted as ${result.kind} (${result.stored} rows, ${result.mapped} matched). ${result.reason ?? ""}`,
+                );
+              } catch (err) {
+                setMessage(err instanceof Error ? err.message : "Import failed");
+              } finally {
+                setBusy(false);
+              }
+            });
           }}
         >
           Import paste
@@ -280,6 +331,7 @@ export default function DatasetsPage() {
               Delete
             </button>
           </div>
+          <p className="text-right text-[11px] uppercase tracking-[0.14em] text-muted">Desk only · not sold · not a permanent archive</p>
           <DatasetTable file={file} />
         </div>
       ))}

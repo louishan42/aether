@@ -6,6 +6,7 @@ import { saveSnapshot } from "../services/persist.js";
 import { createTools } from "../../../agents/tools/index.js";
 import { runInvoiceAgent } from "../../../agents/runners/run.js";
 import { draftBelongsToTenant, openDrafts } from "../services/drafts.js";
+import { tooMany } from "../services/rateLimit.js";
 
 const router = Router();
 
@@ -26,6 +27,9 @@ router.post("/:id/approve", async (req, res) => {
   const draft = store.drafts.find((row) => row.id === req.params.id);
   if (!draft) return res.status(404).json({ error: "draft not found" });
   if (!draftBelongsToTenant(businessId, draft)) return res.status(403).json({ error: "not in tenant" });
+  if (tooMany(`approve:${businessId}:${actorId}`, 20, 60_000)) {
+    return res.status(429).json({ error: "Too many approval actions. Wait a minute, then try again." });
+  }
   const decision = req.body?.decision === "rejected" ? "rejected" : "approved";
   draft.status = decision;
   if (decision === "approved") {

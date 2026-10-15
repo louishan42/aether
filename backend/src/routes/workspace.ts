@@ -4,6 +4,7 @@ import type { TenantRequest } from "../middleware/tenant.js";
 import { addLog, getProfile, getStore, setProfile } from "../services/store.js";
 import { saveSnapshot } from "../services/persist.js";
 import { deleteImportedDataset, deskCounts, ingestCsv } from "../services/ingest.js";
+import { tooMany } from "../services/rateLimit.js";
 import { runAgentsForKind } from "../../../agents/runners/run.js";
 import { complianceItems, grantMatches, profileReady as isProfileReady } from "../services/profile.js";
 import type { Appointment, FollowUpCustomer } from "../types.js";
@@ -66,6 +67,9 @@ router.post("/datasets/import", async (req, res) => {
   const filename = typeof req.body?.filename === "string" && req.body.filename.trim() ? req.body.filename.trim() : "upload.csv";
   const kind = typeof req.body?.kind === "string" ? req.body.kind : undefined;
   if (!csv.trim()) return res.status(400).json({ error: "Paste or drop a CSV file." });
+  if (tooMany(`import:${businessId}`, 8, 60_000)) {
+    return res.status(429).json({ error: "Too many uploads. Wait a minute, then try again." });
+  }
   try {
     const result = ingestCsv(
       businessId,
