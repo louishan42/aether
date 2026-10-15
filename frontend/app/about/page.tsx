@@ -22,8 +22,8 @@ const team = [
     linkedin: "https://www.linkedin.com/in/shah-htet-naing",
     contributions: [
       "Agent logic and scoring.",
-      "Security review and access.",
-      "PII handling in drafts.",
+      "Tenant checks on approve.",
+      "Audit log for draft approvals.",
     ],
   },
   {
@@ -60,7 +60,7 @@ const stack = [
   { name: "Render", mark: "R" },
   { name: "Node.js", mark: "JS" },
   { name: "Supabase", mark: "S" },
-  { name: "Resend", mark: "@" },
+  { name: "Groq", mark: "G" },
 ];
 
 export default function AboutPage() {

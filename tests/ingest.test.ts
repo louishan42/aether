@@ -51,6 +51,7 @@ describe("csv ingest", () => {
   it("does not count grant checklists as reminder drafts", () => {
     getStore().drafts.unshift({
       id: crypto.randomUUID(),
+      businessId: "demo-business",
       agent: "grant",
       recordId: "mra",
       invoiceId: "mra",

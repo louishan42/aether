@@ -322,7 +322,9 @@ export function deskCounts(businessId: string) {
     invoices: store.invoices.filter((row) => row.businessId === businessId).length,
     customers: store.customers.filter((row) => row.businessId === businessId).length,
     appointments: store.appointments.filter((row) => row.businessId === businessId).length,
-    pendingApprovals: store.drafts.filter((draft) => draft.status === "pending" || draft.status === "approved").length,
+    pendingApprovals: store.drafts.filter(
+      (draft) => (draft.status === "pending" || draft.status === "approved") && (!draft.businessId || draft.businessId === businessId),
+    ).length,
   };
 }
 

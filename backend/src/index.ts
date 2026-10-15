@@ -23,7 +23,12 @@ app.use(
         callback(null, true);
         return;
       }
-      if (origins.includes(origin) || origin.endsWith(".vercel.app") || origin.startsWith("http://localhost:")) {
+      const allowed =
+        origins.includes(origin) ||
+        origin === "https://aether-eight-ecru.vercel.app" ||
+        /^https:\/\/aether[a-z0-9-]*\.vercel\.app$/i.test(origin) ||
+        origin.startsWith("http://localhost:");
+      if (allowed) {
         callback(null, true);
         return;
       }
@@ -68,8 +73,14 @@ app.get("/", (_req, res) => {
   });
 });
 
-app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, service: "aether", dataset: "supabase", groq: Boolean(process.env.GROQ_API_KEY?.trim()) });
+app.get("/api/health", async (_req, res) => {
+  const { databaseReady } = await import("./services/db.js");
+  res.json({
+    ok: true,
+    service: "aether",
+    dataset: databaseReady ? "supabase" : "memory",
+    groq: Boolean(process.env.GROQ_API_KEY?.trim()),
+  });
 });
 
 app.use("/api/invoices", invoiceRoutes);

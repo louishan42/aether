@@ -40,6 +40,7 @@ export function createTools(businessId: string) {
       const store = getStore();
       const draft: AgentDraft = {
         id: crypto.randomUUID(),
+        businessId,
         agent: input.agent,
         recordId: input.recordId,
         invoiceId: input.recordId,
@@ -71,7 +72,7 @@ export function createTools(businessId: string) {
 
     async execute_approved_draft(draftId: string) {
       const store = getStore();
-      const draft = store.drafts.find((row) => row.id === draftId);
+      const draft = store.drafts.find((row) => row.id === draftId && (!row.businessId || row.businessId === businessId));
       if (!draft) throw new Error("draft not found");
       if (draft.status !== "approved") throw new Error("draft is not approved");
 

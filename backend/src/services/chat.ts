@@ -6,6 +6,7 @@ import { saveSnapshot } from "./persist.js";
 import { draftBuckets, openDrafts } from "./drafts.js";
 import { addLog, getPolicy, getProfile, getStore } from "./store.js";
 import { logDraftApproved } from "./actions.js";
+import { draftBelongsToTenant } from "./drafts.js";
 import { groqReady, groqReply } from "./groq.js";
 
 export type ChatLink = { href: string; label: string };
@@ -15,7 +16,7 @@ function has(text: string, ...words: string[]) {
   return words.some((word) => text.includes(word));
 }
 
-export async function answerChat(businessId: string, raw: string): Promise<ChatReply> {
+export async function answerChat(businessId: string, raw: string, actorId = "demo-owner"): Promise<ChatReply> {
   const text = raw.trim().toLowerCase();
   const store = getStore();
   const policy = getPolicy(businessId);
@@ -51,19 +52,18 @@ export async function answerChat(businessId: string, raw: string): Promise<ChatR
   const approveMatch = raw.match(/inv[-\s]?(\d+)/i);
   if (has(text, "approve") && approveMatch) {
     const needle = `INV-${approveMatch[1]}`.toUpperCase();
-    const draft = store.drafts.find(
-      (item) =>
-        item.status === "pending" &&
-        (item.subject.toUpperCase().includes(needle) ||
-          store.invoices.find((invoice) => invoice.id === item.recordId)?.invoiceNumber.toUpperCase() === needle),
-    );
-    if (!draft) {
+    const draft = store.drafts.find((item) => {
+      if (item.status !== "pending" || item.businessId !== businessId) return false;
+      const invoice = store.invoices.find((row) => row.id === item.recordId && row.businessId === businessId);
+      return item.subject.toUpperCase().includes(needle) || invoice?.invoiceNumber.toUpperCase() === needle;
+    });
+    if (!draft || !draftBelongsToTenant(businessId, draft)) {
       return { reply: `No pending draft for ${needle}. Run agents first, or check Approvals.`, links: [{ href: "/approvals", label: "Approvals" }] };
     }
     draft.status = "approved";
     logDraftApproved({
       businessId,
-      userId: "demo-owner",
+      userId: actorId,
       agent: draft.agent,
       recordId: draft.recordId,
       draftId: draft.id,

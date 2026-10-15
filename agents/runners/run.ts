@@ -6,9 +6,11 @@ import { GRANT_CATALOG } from "../catalogs/grants.js";
 import { COMPLIANCE_CATALOG } from "../catalogs/compliance.js";
 import type { AgentKind, AgentRun } from "../../backend/src/types.js";
 
-function dropPending(agent: AgentKind) {
+function dropPending(businessId: string, agent: AgentKind) {
   const store = getStore();
-  store.drafts = store.drafts.filter((draft) => !(draft.agent === agent && draft.status === "pending"));
+  store.drafts = store.drafts.filter(
+    (draft) => !(draft.agent === agent && draft.status === "pending" && (!draft.businessId || draft.businessId === businessId)),
+  );
 }
 
 function startRun(businessId: string, agent: AgentKind): AgentRun {
@@ -33,11 +35,12 @@ function finishRun(run: AgentRun, result: string) {
     invoiceId: null,
     action: "agent_analyze",
     result,
+    businessId: run.businessId,
   });
 }
 
 export async function runInvoiceAgent(businessId: string) {
-  dropPending("invoice");
+  dropPending(businessId, "invoice");
   const store = getStore();
   const run = startRun(businessId, "invoice");
   const tools = createTools(businessId);
@@ -46,7 +49,7 @@ export async function runInvoiceAgent(businessId: string) {
 
   for (const invoice of eligible) {
     const existingPending = store.drafts.find(
-      (draft) => draft.agent === "invoice" && draft.recordId === invoice.id && draft.status === "pending",
+      (draft) => draft.agent === "invoice" && draft.recordId === invoice.id && draft.status === "pending" && draft.businessId === businessId,
     );
     if (existingPending) continue;
     const overdue = daysOverdue(invoice);
@@ -70,7 +73,7 @@ export async function runAgent(businessId: string) {
 }
 
 export async function runGrantAgent(businessId: string) {
-  dropPending("grant");
+  dropPending(businessId, "grant");
   const store = getStore();
   const run = startRun(businessId, "grant");
   const profile = enrichProfile(businessId);
@@ -83,7 +86,7 @@ export async function runGrantAgent(businessId: string) {
   const created = [];
 
   for (const { grant, verdict } of matches) {
-    const existing = store.drafts.find((d) => d.agent === "grant" && d.recordId === grant.id && d.status === "pending");
+    const existing = store.drafts.find((d) => d.agent === "grant" && d.recordId === grant.id && d.status === "pending" && d.businessId === businessId);
     if (existing) continue;
     const draft = tools.create_draft({
       agent: "grant",
@@ -101,7 +104,7 @@ export async function runGrantAgent(businessId: string) {
 }
 
 export async function runCustomerAgent(businessId: string) {
-  dropPending("customer");
+  dropPending(businessId, "customer");
   const store = getStore();
   const run = startRun(businessId, "customer");
   const policy = getPolicy(businessId);
@@ -116,7 +119,7 @@ export async function runCustomerAgent(businessId: string) {
   const created = [];
 
   for (const customer of eligible) {
-    const existing = store.drafts.find((d) => d.agent === "customer" && d.recordId === customer.id && d.status === "pending");
+    const existing = store.drafts.find((d) => d.agent === "customer" && d.recordId === customer.id && d.status === "pending" && d.businessId === businessId);
     if (existing) continue;
     const draft = tools.create_draft({
       agent: "customer",
@@ -134,7 +137,7 @@ export async function runCustomerAgent(businessId: string) {
 }
 
 export async function runComplianceAgent(businessId: string) {
-  dropPending("compliance");
+  dropPending(businessId, "compliance");
   const store = getStore();
   const run = startRun(businessId, "compliance");
   const profile = enrichProfile(businessId);
@@ -151,7 +154,7 @@ export async function runComplianceAgent(businessId: string) {
       (row) => row.businessId === businessId && row.requirementId === requirement.id,
     );
     if (evidence && evidence.status !== "missing") continue;
-    const existing = store.drafts.find((d) => d.agent === "compliance" && d.recordId === requirement.id && d.status === "pending");
+    const existing = store.drafts.find((d) => d.agent === "compliance" && d.recordId === requirement.id && d.status === "pending" && d.businessId === businessId);
     if (existing) continue;
     const draft = tools.create_draft({
       agent: "compliance",
@@ -169,7 +172,7 @@ export async function runComplianceAgent(businessId: string) {
 }
 
 export async function runAppointmentAgent(businessId: string) {
-  dropPending("appointment");
+  dropPending(businessId, "appointment");
   const store = getStore();
   const run = startRun(businessId, "appointment");
   const policy = getPolicy(businessId);
@@ -184,7 +187,7 @@ export async function runAppointmentAgent(businessId: string) {
   const created = [];
 
   for (const appointment of eligible) {
-    const existing = store.drafts.find((d) => d.agent === "appointment" && d.recordId === appointment.id && d.status === "pending");
+    const existing = store.drafts.find((d) => d.agent === "appointment" && d.recordId === appointment.id && d.status === "pending" && d.businessId === businessId);
     if (existing) continue;
     const draft = tools.create_draft({
       agent: "appointment",

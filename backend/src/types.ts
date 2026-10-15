@@ -60,6 +60,7 @@ export type BusinessProfile = {
 
 export type AgentDraft = {
   id: string;
+  businessId: string;
   agent: AgentKind;
   recordId: string;
   invoiceId: string;

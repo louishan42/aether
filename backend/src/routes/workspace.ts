@@ -13,7 +13,7 @@ const router = Router();
 router.get("/audit", (req, res) => {
   const { businessId } = req as TenantRequest;
   const store = getStore();
-  const logs = store.logs.filter((log) => !log.businessId || log.businessId === businessId);
+  const logs = store.logs.filter((log) => log.businessId === businessId);
   res.json({
     logs: logs.map((log) => ({
       id: log.id,
@@ -222,12 +222,20 @@ router.post("/appointments", async (req, res) => {
   res.json({ appointment });
 });
 
-router.post("/appointments/:id/cancel", (req, res) => {
+router.post("/appointments/:id/cancel", async (req, res) => {
   const { businessId } = req as TenantRequest;
   const appointment = getStore().appointments.find((row) => row.id === req.params.id && row.businessId === businessId);
   if (!appointment) return res.status(404).json({ error: "booking not found" });
   appointment.status = "cancelled";
-  addLog({ agent: "appointment", agentRunId: null, invoiceId: appointment.id, action: "cancel_booking", result: appointment.id });
+  addLog({
+    agent: "appointment",
+    agentRunId: null,
+    invoiceId: appointment.id,
+    action: "cancel_booking",
+    result: appointment.id,
+    businessId,
+  });
+  await saveSnapshot();
   res.json({ appointment });
 });
 

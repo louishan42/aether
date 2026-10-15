@@ -6,7 +6,7 @@ export async function sendReminderEmail(input: {
   if (!process.env.RESEND_API_KEY) {
     return {
       sent: true,
-      detail: `stub send to ${input.to} (Resend not configured)`,
+      detail: `Recorded on the desk for ${input.to}. Outbound email is not wired.`,
     };
   }
 

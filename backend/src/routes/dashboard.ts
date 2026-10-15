@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { TenantRequest } from "../middleware/tenant.js";
 import { getPolicy, getStore, setPolicy } from "../services/store.js";
+import { saveSnapshot } from "../services/persist.js";
 import { daysOverdue, isEligible } from "../services/overdue.js";
 import { complianceItems, enrichProfile, grantMatches } from "../services/profile.js";
 import { draftBuckets, draftInTenant } from "../services/drafts.js";
@@ -195,7 +196,7 @@ router.get("/stats", (req, res) => {
         { label: "Compliance", value: complianceGaps },
       ],
     },
-    recentActivity: store.logs.filter((item) => inRange(item.timestamp, from, to)).slice(0, 8),
+    recentActivity: store.logs.filter((item) => item.businessId === businessId && inRange(item.timestamp, from, to)).slice(0, 8),
     policy,
     profile,
   });
@@ -206,7 +207,7 @@ router.get("/policy", (req, res) => {
   res.json({ policy: getPolicy(businessId) });
 });
 
-router.post("/policy", (req, res) => {
+router.post("/policy", async (req, res) => {
   const { businessId } = req as TenantRequest;
   const schema = z.object({
     minimumOverdueDays: z.coerce.number().int().min(0),
@@ -218,6 +219,7 @@ router.post("/policy", (req, res) => {
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
   const policy = setPolicy({ businessId, ...parsed.data });
+  await saveSnapshot();
   res.json({ policy });
 });
 

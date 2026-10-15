@@ -146,9 +146,9 @@ export default function Home() {
                 <li>Same five agents, more people can approve</li>
                 <li>Room for more files on Datasets</li>
               </ul>
-              <a href="#premium" className="btn-gold mt-6">
-                Go Premium
-              </a>
+              <Link href="/dashboard" className="btn-gold mt-6">
+                Open the desk
+              </Link>
             </article>
           </div>
         </section>

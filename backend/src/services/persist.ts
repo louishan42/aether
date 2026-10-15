@@ -66,6 +66,7 @@ export async function loadSnapshot() {
     generatedAt: row.generatedAt.toISOString(),
     agent: row.agent as AgentDraft["agent"],
     status: row.status as AgentDraft["status"],
+    businessId: row.businessId ?? "",
   }));
   store.logs = logs.map((row) => ({
     ...row,
@@ -147,6 +148,7 @@ export async function saveSnapshot() {
       prisma.agentDraft.createMany({
         data: store.drafts.map((row) => ({
           ...row,
+          businessId: row.businessId ?? "",
           generatedAt: new Date(row.generatedAt),
         })),
       }),

@@ -47,6 +47,7 @@ model Appointment {
 
 model AgentDraft {
   id          String   @id
+  businessId  String   @default("")
   agent       String
   recordId    String
   invoiceId   String

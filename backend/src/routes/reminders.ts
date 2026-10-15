@@ -5,7 +5,7 @@ import { logDraftApproved } from "../services/actions.js";
 import { saveSnapshot } from "../services/persist.js";
 import { createTools } from "../../../agents/tools/index.js";
 import { runInvoiceAgent } from "../../../agents/runners/run.js";
-import { draftInTenant, openDrafts } from "../services/drafts.js";
+import { draftBelongsToTenant, openDrafts } from "../services/drafts.js";
 
 const router = Router();
 
@@ -20,12 +20,12 @@ router.get("/pending", (req, res) => {
   res.json({ drafts: openDrafts(businessId) });
 });
 
-router.post("/:id/approve", (req, res) => {
+router.post("/:id/approve", async (req, res) => {
   const { businessId, actorId } = req as TenantRequest;
   const store = getStore();
   const draft = store.drafts.find((row) => row.id === req.params.id);
   if (!draft) return res.status(404).json({ error: "draft not found" });
-  if (!draftInTenant(businessId, draft.recordId, draft.agent)) return res.status(403).json({ error: "not in tenant" });
+  if (!draftBelongsToTenant(businessId, draft)) return res.status(403).json({ error: "not in tenant" });
   const decision = req.body?.decision === "rejected" ? "rejected" : "approved";
   draft.status = decision;
   if (decision === "approved") {
@@ -50,7 +50,7 @@ router.post("/:id/approve", (req, res) => {
       result: `${actorId} rejected ${draft.id}`,
     });
   }
-  void saveSnapshot();
+  await saveSnapshot();
   res.json({ draft });
 });
 
@@ -58,6 +58,9 @@ router.post("/:id/send", async (req, res) => {
   const { businessId } = req as TenantRequest;
   try {
     const tools = createTools(businessId);
+    const draftCheck = getStore().drafts.find((row) => row.id === req.params.id);
+    if (!draftCheck) return res.status(404).json({ error: "draft not found" });
+    if (!draftBelongsToTenant(businessId, draftCheck)) return res.status(403).json({ error: "not in tenant" });
     const result = await tools.execute_approved_draft(req.params.id);
     const draft = getStore().drafts.find((d) => d.id === req.params.id);
     addLog({

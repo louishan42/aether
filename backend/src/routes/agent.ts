@@ -49,7 +49,11 @@ router.get("/activity", (req, res) => {
   const { businessId } = req as TenantRequest;
   const store = getStore();
   res.json({
-    logs: store.logs.filter((log) => store.runs.some((run) => run.id === log.agentRunId && run.businessId === businessId) || log.agentRunId === null),
+    logs: store.logs.filter(
+      (log) =>
+        log.businessId === businessId ||
+        store.runs.some((run) => run.id === log.agentRunId && run.businessId === businessId),
+    ),
     runs: store.runs.filter((run) => run.businessId === businessId),
   });
 });
